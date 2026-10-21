@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pemilihan Ketua &amp; Wakil Ketua OSIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Plus+Jakarta+Sans:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f5f3;--card:#fff;--tx:#1d1713;--mut:#6b625b;--acc:#e85d04;--acc2:#ffb020;--bd:#e8e2dc;--ok:#15803d;--bad:#c62828;--c1:#ff6a13;--c2:#ffc233;
+--fd:"Bricolage Grotesque",system-ui,sans-serif;--fb:"Plus Jakarta Sans",system-ui,sans-serif;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14100d;--card:#201a16;--tx:#f6efe9;--mut:#b0a49a;--bd:#382f29;--ok:#4ade80;--bad:#ff8a80}}
+:root[data-theme="dark"]{--bg:#14100d;--card:#201a16;--tx:#f6efe9;--mut:#b0a49a;--bd:#382f29;--ok:#4ade80;--bad:#ff8a80}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--fb)}
+nav{display:flex;gap:4px;padding:8px 14px;background:#1e1612;flex-wrap:wrap;align-items:center}
+nav a{padding:8px 14px;border-radius:99px;color:#c9bdb3;font-weight:700;cursor:pointer;font-size:.9rem}
+nav a.on{background:var(--acc);color:#fff}
+main{max-width:1000px;margin:0 auto;padding:18px}
+h1{font-family:var(--fd);margin:.2em 0;font-size:1.6rem;font-weight:800}
+.sub{color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:16px;margin-bottom:12px}
+input,textarea,button{font:inherit;color:var(--tx)}
+input,textarea{width:100%;padding:12px 14px;border:1.5px solid var(--bd);border-radius:12px;background:var(--bg)}
+input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--acc2);outline-offset:1px}
+button{padding:12px 20px;border:0;border-radius:12px;background:var(--acc);color:#fff;font-weight:800;cursor:pointer}
+button.sec{background:transparent;border:1.5px solid var(--bd);color:var(--tx)}
+button.dan{background:var(--bad);color:#fff}
+button:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.msg{padding:11px 14px;border-radius:12px;margin-top:10px;font-weight:700}
+.msg.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+.msg.er{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.logo{width:clamp(44px,6vw,92px);height:clamp(44px,6vw,92px);object-fit:contain;flex:none}
+.fb{display:grid;place-items:center;border-radius:50%;background:var(--acc2);color:#2b1700;font:800 .75em/1 var(--fd);text-align:center;font-size:clamp(.7rem,1.3vw,1.3rem)}
+.brand{display:flex;align-items:center;gap:14px}
+.brand b{display:block;font-family:var(--fd);font-weight:800;font-size:clamp(1rem,1.9vw,1.9rem);line-height:1.1}
+.brand small{color:inherit;opacity:.75;font-weight:700}
+.photos{display:flex;justify-content:center;gap:8px;position:relative}
+.ph{width:clamp(90px,15vw,240px);aspect-ratio:3/4;border-radius:14px;background:linear-gradient(160deg,#ff8a3d,#b43e00);object-fit:cover;display:block}
+.badge{display:inline-block;background:var(--acc);color:#fff;font-weight:800;font-size:.8rem;padding:6px 14px;border-radius:99px}
+/* bilik */
+.hero{background:linear-gradient(120deg,#ff7a1a,#e85d04 60%,#c2410c);color:#fff;padding:16px 18px 60px}
+.hero .in{max-width:760px;margin:0 auto}
+.hero h1{margin:18px 0 4px;font-size:clamp(1.4rem,5vw,2.2rem);line-height:1.15}
+.hero p{margin:0;opacity:.92}
+.bm{max-width:760px;margin:-36px auto 0;padding:0 16px 24px}
+.st{display:flex;align-items:center;gap:10px;margin:0 0 12px;font:800 1.05rem var(--fd)}
+.st i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#fff;font-style:normal;font-size:.9rem;flex:none}
+.card.step{padding:18px;box-shadow:0 6px 24px rgba(60,25,0,.08)}
+#code{font-size:1.25rem;font-weight:700;letter-spacing:.04em}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.grid{grid-template-columns:1fr}}
+.pc{margin:0;padding:14px;text-align:center;cursor:pointer;border:3px solid var(--bd);position:relative;display:flex;flex-direction:column;gap:10px;transition:border-color .15s,box-shadow .15s}
+.pc.sel{border-color:var(--acc);box-shadow:0 8px 28px color-mix(in srgb,var(--acc) 30%,transparent)}
+.pc .photos{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pc .ph{width:100%;max-width:none}
+.pc .no{position:absolute;top:22px;left:22px;z-index:1;width:40px;height:40px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font:800 1.25rem var(--fd);border:3px solid var(--card)}
+.pn{font:800 1.15rem/1.2 var(--fd);margin:0;min-height:2.4em;display:grid;place-items:center}
+.pick{padding:11px;border-radius:12px;border:2px solid var(--acc);color:var(--acc);font-weight:800}
+.pc.sel .pick{background:var(--acc);color:#fff}
+.bar2{position:sticky;bottom:0;display:flex;align-items:center;gap:12px;justify-content:space-between;margin-top:14px;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 -6px 24px rgba(60,25,0,.12)}
+.bar2 span{font-weight:700;color:var(--mut);min-width:0}
+.bar2 button{padding:14px 26px;font-size:1.05rem;flex:none}
+/* layar */
+.live{--card:#241b15;--bd:#3a2d24;--mut:#bfae9f;--tx:#fff7f0;min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(1200px 500px at 50% -10%,#4a1f06,#120d0a 70%);color:var(--tx);border-top:8px solid var(--acc);padding:2vh 3vw}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:2vw}
+.hd h1{font-size:clamp(1.1rem,2.6vw,2.6rem);margin:0;text-align:center;flex:1}
+.hr{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.lv{background:#e11d48;color:#fff;font-weight:800;padding:.35em .9em;border-radius:99px;font-size:clamp(.8rem,1.3vw,1.3rem)}
+.lv:before{content:"";display:inline-block;width:.6em;height:.6em;background:#fff;border-radius:50%;margin-right:.5em;animation:p 1.2s infinite}
+@keyframes p{50%{opacity:.2}}@media (prefers-reduced-motion:reduce){.lv:before{animation:none}.col .bar i{transition:none!important}}
+.clk{font:800 clamp(1.1rem,2.2vw,2.2rem) var(--fd);font-variant-numeric:tabular-nums}
+.cols{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2vw;margin:2.5vh 0}
+.col{background:var(--card);border-radius:28px;padding:2.5vh 1.5vw;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2vh;border:3px solid var(--bd);position:relative;overflow:hidden}
+.col.lead{border-color:var(--c2);box-shadow:0 0 60px color-mix(in srgb,var(--c2) 25%,transparent)}
+.col .big{position:absolute;left:50%;top:-4vh;transform:translateX(-50%);font:800 clamp(12rem,32vw,34rem)/1 var(--fd);color:transparent;-webkit-text-stroke:3px color-mix(in srgb,var(--cc) 30%,transparent);pointer-events:none}
+.col>*{position:relative}.col>.big{position:absolute}
+.col .nm{font:800 clamp(1.2rem,2.7vw,2.8rem)/1.1 var(--fd);text-align:center}
+.pct{font:800 clamp(3.5rem,10vw,10rem)/1 var(--fd);font-variant-numeric:tabular-nums;color:var(--cc)}
+.col .bar{width:80%;height:clamp(12px,2vh,22px);background:#3a2d24;border-radius:99px;overflow:hidden}
+.col .bar i{display:block;height:100%;border-radius:99px;background:var(--cc);transition:width .8s ease}
+.cn{color:var(--mut);font-weight:700;font-size:clamp(1rem,1.8vw,1.8rem)}
+.tag{position:absolute!important;top:14px;right:14px;background:var(--c2);color:#2b1700;font-weight:800;padding:.3em .9em;border-radius:99px;font-size:clamp(.75rem,1.2vw,1.2rem)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-radius:20px;padding:1.6vh 1vw;text-align:center;border:1px solid var(--bd)}
+.stats>div+div{border-left:1px solid var(--bd)}
+.stats b{display:block;font:800 clamp(1.8rem,4vw,4rem) var(--fd);font-variant-numeric:tabular-nums;color:var(--c2)}
+.stats span{color:var(--mut);font-weight:700;font-size:clamp(.7rem,1.3vw,1.3rem)}
+.pill{display:inline-block;margin-top:1.5vh;padding:.3em 1em;border-radius:99px;font-weight:800;font-size:clamp(.8rem,1.4vw,1.4rem);background:rgba(74,222,128,.15);color:#4ade80}
+.pill.off{background:rgba(255,138,128,.15);color:#ff8a80}
+</style>
+</head>
+<body>
+<nav>
+  <a data-t="layar">📺 Layar Hitung</a><a data-t="bilik">🗳️ Bilik Suara</a><a data-t="admin">⚙️ Panel Panitia</a>
+  <a id="fs" style="margin-left:auto">⛶ Layar penuh</a>
+</nav>
+<div id="app"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script>
+/* === ISI DENGAN KONFIGURASI FIREBASE ANDA (lihat PANDUAN.md) === */
+const FB={apiKey:"AIzaSyDjlQYqbbE_gZMI9NtODM57Q0BQRXP5-d0",authDomain:"pemilu-osis-smknedas.firebaseapp.com",databaseURL:"https://pemilu-osis-smknedas-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"pemilu-osis-smknedas",appId:"1:737953067618:web:374ba0270b9f1f5a58973b"};
+/* ============================================================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const slug=s=>String(s).trim().toLowerCase().replace(/[^a-z0-9_-]/g,'_');
+const kiosk=location.hash.slice(1)==='bilik';
+let db,auth,me=null,role=null,ready=false,tab=kiosk?'bilik':(location.hash.slice(1)||'layar');
+let cfg={title:'Pemilihan Ketua & Wakil Ketua OSIS',school:'SMK Negeri 2 Sukorejo',logo:'',candidates:[],open:true};
+let tally={},stats={total:0,voted:0},sel=null,flash=null,voter=null,info=null;
+const typing=()=>document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName);
+function setTab(t){if(kiosk)return;tab=t;try{history.replaceState(null,'','#'+t)}catch(e){};render()}
+document.querySelectorAll('nav a[data-t]').forEach(a=>a.onclick=()=>setTab(a.dataset.t));
+$('#fs').onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(e){}};
+window.addEventListener('hashchange',()=>{if(kiosk)return;tab=location.hash.slice(1)||'layar';render()});
+if(kiosk)document.querySelector('nav').style.display='none';
+const logo=()=>cfg.logo?`<img class="logo" alt="Logo" src="${esc(cfg.logo)}">`:'<span class="logo fb">SMKN<br>2</span>';
+const brand=()=>`<div class="brand">${logo()}<div><b>${esc(cfg.school)}</b><small>Panitia OSIS</small></div></div>`;
+const photos=k=>`<div class="photos"><img class="ph" alt="" src="${esc(k.photoK||'')}" onerror="this.removeAttribute('src')"><img class="ph" alt="" src="${esc(k.photoW||'')}" onerror="this.removeAttribute('src')"></div>`;
+const shrink=(f,m,t)=>new Promise((ok,no)=>{const i=new Image();i.onload=()=>{const r=Math.min(1,m/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*r;c.height=i.height*r;c.getContext('2d').drawImage(i,0,0,c.width,c.height);ok(c.toDataURL(t,.82))};i.onerror=no;i.src=URL.createObjectURL(f)});
+
+function render(){
+  document.querySelectorAll('nav a[data-t]').forEach(a=>a.classList.toggle('on',a.dataset.t===tab));
+  const app=$('#app');
+  if(!db){app.innerHTML='<main><div class="card"><b>Firebase belum dikonfigurasi.</b><p class="sub">Isi objek <code>FB</code> di bagian atas berkas ini. Ikuti langkah di PANDUAN.md.</p></div></main>';return}
+  if(!ready){app.innerHTML='<main><p class="sub">Menghubungkan…</p></main>';return}
+  if(tab==='bilik'||tab==='admin'){
+    if(!me)return loginForm(app);
+    if(role!=='admin'&&!(role==='booth'&&tab==='bilik'))return noAccess(app);
+    return tab==='bilik'?renderBilik(app):renderAdmin(app);
+  }
+  renderLive(app);
+}
+function loginForm(app){
+  app.innerHTML=`<main><div class="card" style="max-width:420px;margin:8vh auto"><h1>Masuk petugas</h1><p class="sub">${tab==='bilik'?'Login perangkat bilik (dilakukan sekali oleh panitia).':'Login panitia.'}</p>
+  <input id="em" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Kata sandi" style="margin-top:8px"><div class="row" style="margin-top:12px"><button id="lg">Masuk</button></div>
+  ${flash?`<div class="msg ${flash.t}">${esc(flash.m)}</div>`:''}</div></main>`;
+  $('#lg').onclick=async()=>{try{await auth.signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value);flash=null}catch(e){flash={t:'er',m:'Email atau kata sandi salah.'};render()}};
+}
+function noAccess(app){
+  app.innerHTML=`<main><div class="card" style="max-width:480px;margin:8vh auto"><h1>Akses ditolak</h1><p class="sub">Akun ini belum terdaftar sebagai ${tab==='admin'?'panitia':'perangkat bilik atau panitia'}.</p><button id="out">Keluar</button></div></main>`;
+  $('#out').onclick=()=>auth.signOut();
+}
+
+function renderLive(app){
+  const tot=Object.values(tally).reduce((a,b)=>a+b,0),mx=Math.max(0,...cfg.candidates.map(k=>tally[slug(k.no)]||0));
+  const lead=cfg.candidates.filter(k=>(tally[slug(k.no)]||0)===mx&&mx>0).length===1;
+  const cols=cfg.candidates.map((k,i)=>{const n=tally[slug(k.no)]||0,p=tot?Math.round(n/tot*100):0,ld=lead&&n===mx;
+    return `<div class="col ${ld?'lead':''}" style="--cc:var(--c${i%2+1})"><span class="big">${esc(k.no)}</span>${ld?'<span class="tag">Unggul</span>':''}${photos(k)}<span class="badge">Nomor urut ${esc(k.no)}</span><div class="nm">${esc(k.name)}</div>
+    <div class="pct">${p}%</div><div class="bar"><i style="width:${p}%"></i></div><div class="cn">${n} suara</div></div>`}).join('');
+  const dpt=stats.total||0,v=stats.voted||0;
+  app.innerHTML=`<div class="live"><div class="hd">${brand()}<h1>${esc(cfg.title)}</h1><div class="hr"><span class="lv">LIVE</span><span class="clk" id="clk"></span></div></div>
+  <div class="cols">${cols||'<div class="col">Belum ada paslon. Atur di Panel Panitia.</div>'}</div>
+  <div class="stats"><div><b>${dpt||'–'}</b><span>Total pemilih</span></div><div><b>${dpt?Math.max(0,dpt-v):'–'}</b><span>Belum memilih</span></div><div><b>${v}</b><span>Sudah memilih</span></div><div><b>${dpt?(v/dpt*100).toFixed(1)+'%':'–'}</b><span>Partisipasi</span></div></div>
+  <div style="text-align:center"><span class="pill ${cfg.open?'':'off'}">${cfg.open?'Pemilihan masih aktif':'Pemilihan ditutup'}</span></div></div>`;
+  tick();
+}
+function tick(){const e=$('#clk');if(e)e.textContent=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(/\./g,':')}
+setInterval(tick,1000);
+
+let tm;
+function lookup(){clearTimeout(tm);const id=slug($('#code').value);info=null;showWho();if(!id)return;
+  tm=setTimeout(async()=>{try{const[v,d]=await Promise.all([db.ref('voters/'+id).get(),db.ref('voted/'+id).get()]);if(slug($('#code').value)!==id)return;
+    info={id,found:v.exists(),n:(v.val()||{}).n,k:(v.val()||{}).k,done:d.exists()};showWho()}catch(e){}},300)}
+function showWho(){const w=$('#who');if(!w)return;if(!info){w.innerHTML='';return}
+  const l=esc(info.n||info.id)+(info.k?' · Kelas '+esc(info.k):'');
+  w.innerHTML=!info.found?'<div class="msg er">NIS tidak ditemukan di daftar pemilih</div>':info.done?`<div class="msg er">⚠ ${l} sudah menggunakan hak pilihnya.</div>`:`<div class="msg ok">✓ ${l}</div>`}
+
+function renderBilik(app){
+  const cur=cfg.candidates.find(k=>k.no===sel);
+  const pc=cfg.candidates.map(k=>`<div class="card pc ${sel===k.no?'sel':''}" data-no="${esc(k.no)}"><span class="no">${esc(k.no)}</span>${photos(k)}<div class="pn">${esc(k.name)}</div><div class="pick">${sel===k.no?'✓ Terpilih':'Pilih paslon '+esc(k.no)}</div></div>`).join('');
+  app.innerHTML=`<div class="hero"><div class="in">${brand()}<h1>${esc(cfg.title)}</h1><p>Satu NIS hanya dapat memilih satu kali.</p></div></div><div class="bm">
+  ${flash?`<div class="msg ${flash.t}" id="fl" style="margin:0 0 12px">${esc(flash.m)}</div>`:''}
+  ${!cfg.open?'<div class="card step">Pemilihan sedang ditutup.</div>':`<div class="card step"><div class="st"><i>1</i>Masukkan NIS</div><input id="code" autocomplete="off" inputmode="numeric" placeholder="Contoh: 12345" value="${esc(voter||'')}"><div id="who"></div></div>
+  <div class="card step"><div class="st"><i>2</i>Pilih paslon</div><div class="grid">${pc||'<span class="sub">Belum ada paslon.</span>'}</div></div>
+  <div class="bar2"><span>${cur?'Pilihan Anda: <b>Paslon '+esc(cur.no)+'</b>':'Belum memilih paslon'}</span><button id="send" ${sel?'':'disabled'}>Kirim suara</button></div>`}</div>`;
+  app.querySelectorAll('.pc').forEach(e=>e.onclick=()=>{voter=$('#code').value;sel=e.dataset.no;flash=null;renderBilik(app)});
+  const s=$('#send');if(s)s.onclick=submit;
+  const ci=$('#code');if(ci){ci.oninput=lookup;showWho()}
+  const f=$('#fl');if(f)f.scrollIntoView({block:'center'});
+}
+async function submit(){
+  const id=slug($('#code').value);voter=$('#code').value;const app=$('#app');
+  if(!info||info.id!==id||!info.found){flash={t:'er',m:'NIS tidak terdaftar. Periksa kembali.'};return renderBilik(app)}
+  if(info.done){flash={t:'er',m:'NIS ini sudah memilih.'};return renderBilik(app)}
+  const S=firebase.database.ServerValue,up={};up['voted/'+id]=S.TIMESTAMP;up['tally/'+slug(sel)]=S.increment(1);up['stats/voted']=S.increment(1);
+  try{await db.ref().update(up);flash={t:'ok',m:'Suara '+(info.n||'')+(info.k?' ('+info.k+')':'')+' tercatat. Terima kasih!'};sel=null;voter=null;info=null}
+  catch(e){flash={t:'er',m:e.code==='PERMISSION_DENIED'?'Suara ditolak: NIS sudah dipakai atau akses tidak sah.':'Gagal mengirim: '+e.message}}
+  renderBilik(app);if(flash.t==='ok')setTimeout(()=>{flash=null;if(tab==='bilik')render()},4000);
+}
+
+function renderAdmin(app){
+  const up=(f,i)=>`<div style="flex:1;min-width:200px"><small class="sub">Foto ${f==='photoK'?'ketua':'wakil'}</small>${cfg.candidates[i][f]?`<img src="${esc(cfg.candidates[i][f])}" style="height:50px;border-radius:6px;vertical-align:middle;margin:0 6px">`:''}<input type="file" accept="image/*" data-up="${f}" data-i="${i}"></div>`;
+  const rows=cfg.candidates.map((k,i)=>`<div class="card"><div class="row"><input style="width:70px" data-f="no" data-i="${i}" value="${esc(k.no)}"><input style="flex:1" data-f="name" data-i="${i}" value="${esc(k.name)}" placeholder="Nama Ketua & Wakil"><button class="sec" data-del="${i}">Hapus</button></div><div class="row" style="margin-top:8px">${up('photoK',i)}${up('photoW',i)}</div></div>`).join('');
+  app.innerHTML=`<main><div class="row" style="justify-content:space-between"><h1>Panel Panitia</h1><button class="sec" id="out">Keluar</button></div>
+  <div class="card"><label>Judul pemilihan</label><input id="ttl" value="${esc(cfg.title)}"><label style="display:block;margin-top:10px">Nama sekolah</label><input id="sch" value="${esc(cfg.school)}">
+  <div class="row" style="margin-top:10px">${logo()}<div><small class="sub">Logo sekolah</small><input type="file" accept="image/*" id="lg"></div></div></div>${rows}
+  <div class="row" style="margin-bottom:12px"><button class="sec" id="add">+ Tambah paslon</button></div>
+  <div class="card"><label>Data siswa (satu per baris: <code>NIS,Nama,Kelas</code>)</label><div class="row" style="margin:8px 0"><span class="sub">Impor CSV:</span><input type="file" accept=".csv,.txt" id="csv" style="width:auto"></div><textarea id="vt" rows="5" placeholder="Tempel data dari Excel di sini"></textarea>
+  <div class="row" style="margin-top:8px"><button id="imp">Simpan data siswa</button><span class="sub">Tersimpan: ${stats.total||0} siswa · Sudah memilih: ${stats.voted||0}</span></div></div>
+  <div class="row"><button id="save">Simpan pengaturan</button><button class="sec" id="tog">${cfg.open?'Tutup pemilihan':'Buka pemilihan'}</button><button class="dan" id="rst">Reset semua suara</button></div>
+  ${flash?`<div class="msg ${flash.t}">${esc(flash.m)}</div>`:''}</main>`;
+  const read=()=>{cfg.title=$('#ttl').value;cfg.school=$('#sch').value;app.querySelectorAll('[data-f]').forEach(e=>cfg.candidates[e.dataset.i][e.dataset.f]=e.value)};
+  const run=async(fn,ok)=>{try{await fn();flash={t:'ok',m:ok}}catch(e){flash={t:'er',m:'Gagal: '+(e.message||e.code)}}renderAdmin(app)};
+  const saveCfg=m=>run(()=>db.ref('config').set(cfg),m);
+  $('#out').onclick=()=>auth.signOut();
+  $('#add').onclick=()=>{read();cfg.candidates.push({no:String(cfg.candidates.length+1),name:'',photoK:'',photoW:''});renderAdmin(app)};
+  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{read();cfg.candidates.splice(b.dataset.del,1);renderAdmin(app)});
+  app.querySelectorAll('[data-up]').forEach(e=>e.onchange=async()=>{const f=e.files[0];if(!f)return;read();cfg.candidates[e.dataset.i][e.dataset.up]=await shrink(f,520,'image/jpeg');saveCfg('Foto diunggah.')});
+  $('#lg').onchange=async e=>{const f=e.target.files[0];if(!f)return;read();cfg.logo=await shrink(f,256,'image/png');saveCfg('Logo diunggah.')};
+  $('#save').onclick=()=>{read();saveCfg('Tersimpan.')};
+  $('#tog').onclick=()=>{read();cfg.open=!cfg.open;saveCfg(cfg.open?'Pemilihan dibuka.':'Pemilihan ditutup.')};
+  $('#csv').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#vt').value=String(r.result).replace(/^\uFEFF/,'')};r.readAsText(f)};
+  $('#imp').onclick=()=>{const o={};let n=0;String($('#vt').value).replace(/\r/g,'').split('\n').forEach((l,i)=>{if(!l.trim())return;const p=l.split(/[,;\t]/);if(i===0&&/nis/i.test(p[0]))return;const id=slug(p[0]);if(!id)return;o[id]={n:(p[1]||'').trim(),k:(p[2]||'').trim()};n++});
+    if(!n){flash={t:'er',m:'Tidak ada data yang bisa dibaca.'};return renderAdmin(app)}
+    run(()=>db.ref().update({voters:o,'stats/total':n}),n+' siswa tersimpan.')};
+  $('#rst').onclick=()=>{if(!confirm('Hapus SEMUA suara dan status memilih?'))return;run(()=>db.ref().update({tally:null,voted:null,'stats/voted':0}),'Semua suara direset.')};
+}
+
+if(!FB.apiKey.startsWith('ISI')){
+  firebase.initializeApp(FB);db=firebase.database();auth=firebase.auth();
+  db.ref('config').on('value',s=>{const d=s.val()||{};cfg={...cfg,...d,logo:d.logo||'',candidates:d.candidates?Object.values(d.candidates):[],open:d.open!==false};if(!typing())render()});
+  db.ref('tally').on('value',s=>{tally=s.val()||{};if(tab==='layar')render()});
+  db.ref('stats').on('value',s=>{stats={total:0,voted:0,...(s.val()||{})};if(tab==='layar'||(tab==='admin'&&!typing()))render()});
+  auth.onAuthStateChanged(async u=>{me=u;role=null;
+    if(u){try{const[a,b]=await Promise.all([db.ref('admins/'+u.uid).get(),db.ref('booths/'+u.uid).get()]);role=a.val()===true?'admin':b.val()===true?'booth':'none'}catch(e){role='none'}}
+    ready=true;render()});
+}else render();
+</script>
+</body>
+</html>
