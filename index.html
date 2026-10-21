@@ -51,7 +51,7 @@ button:disabled{background:#ece6e2;color:#a69d96;box-shadow:none;cursor:default}
 .vh{display:flex;align-items:center;gap:12px;padding:16px 0}
 .vh b{display:block;font-size:1.05rem;line-height:1.2}.vh small{color:var(--mut);font-weight:600}
 .back{width:44px;height:44px;padding:0;border-radius:50%;background:#fff;border:1.5px solid var(--bd);color:var(--tx);box-shadow:none;font-size:1.6rem;line-height:1;flex:none}
-.sec{font-weight:800;font-size:1.25rem;margin:22px 0 10px;letter-spacing:-.01em}
+.sh{font-weight:800;font-size:1.25rem;margin:22px 0 10px;letter-spacing:-.01em}
 #code{font-size:1.3rem;font-weight:700;letter-spacing:.05em}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:520px){.grid{grid-template-columns:1fr}}
@@ -175,6 +175,42 @@ input[type=file]{font-size:.85rem;max-width:100%}
  .live .stats span{font-size:.72rem}
  .live .pill{font-size:.8rem}
 }
+/* tombol visi-misi & lembar rincian */
+.vm{align-self:center;background:var(--tint);color:var(--acc);box-shadow:none;padding:9px 16px;font-size:.88rem}
+.sbg{position:fixed;inset:0;z-index:40;background:rgba(20,10,5,.5);display:flex;align-items:flex-end;justify-content:center}
+.shs{background:#fff;width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:28px 28px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom,0px))}
+@media (min-width:700px){.sbg{align-items:center}.shs{border-radius:28px}}
+.shs h3{margin:0 0 4px;font-size:1.25rem}
+.shs h4{margin:16px 0 6px;color:var(--acc);font-size:.85rem;letter-spacing:.08em;text-transform:uppercase}
+.shs p,.shs li{line-height:1.55;margin:0 0 4px}.shs ol{padding-left:20px;margin:0}
+.hb .tg{margin:0 0 18px;font-size:1.1rem;opacity:.95}
+/* panel panitia */
+.adm{max-width:860px;margin:0 auto;padding:16px 14px 110px}
+.ah{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.ah h1{margin:0}
+.atl{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.at{background:var(--soft);border:1px solid var(--bd);border-radius:18px;padding:12px 8px;text-align:center}
+.at b{display:block;font-size:1.5rem;font-weight:800;color:var(--acc)}.at span{font-size:.74rem;color:var(--mut);font-weight:700}
+.atabs{display:flex;gap:4px;background:var(--soft);padding:4px;border-radius:99px;margin-bottom:14px;overflow-x:auto}
+.ab{flex:1;white-space:nowrap;background:transparent;color:var(--mut);box-shadow:none;padding:10px 14px}
+.ab.on{background:#fff;color:var(--acc);box-shadow:0 2px 10px rgba(255,90,60,.2)}
+.card h2{margin:0 0 6px;font-size:1.1rem}
+.fl{display:block;font-weight:700;font-size:.82rem;color:var(--mut);margin:12px 0 6px}
+.g2{display:grid;grid-template-columns:90px 1fr;gap:10px}
+.ph2{display:flex;align-items:center;gap:10px}.ph2 b{flex:1;font-size:1.05rem}
+.no2{width:34px;height:34px;border-radius:50%;background:var(--g);color:#fff;display:grid;place-items:center;font-weight:800}
+.ups{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.up{display:flex;flex-direction:column;align-items:center;gap:6px;border:2px dashed #f3c9bb;border-radius:18px;padding:10px;cursor:pointer;background:#fffaf8}
+.up img,.up .pl{width:100%;max-width:110px;aspect-ratio:3/4;object-fit:cover;border-radius:12px}
+.up .pl{display:grid;place-items:center;font-size:2rem;color:var(--acc);background:var(--tint)}
+.up small{font-weight:700;color:var(--mut);text-align:center}
+.btn{display:inline-block;padding:10px 18px;border-radius:99px;border:1.5px solid var(--bd);font-weight:800;cursor:pointer;background:#fff}
+.sm{padding:8px 14px;font-size:.85rem}
+.add{width:100%;border-style:dashed;padding:16px}
+.lk{display:flex;gap:8px;align-items:center}.lk input{flex:1;font-size:.85rem;min-width:0}
+.dz{border-color:#f6c6cb;background:#fffafa}
+.sbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:center;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,.96);border-top:1px solid var(--bd)}
+.sbar button{width:100%;max-width:420px;padding:15px}
+@media (max-width:600px){.atl{grid-template-columns:1fr 1fr}.g2{grid-template-columns:76px 1fr}}
 </style>
 </head>
 <body>
@@ -266,24 +302,29 @@ function showWho(){const w=$('#who');if(!w)return;if(!info){w.innerHTML='';retur
 
 const CONT='<svg class="cont" viewBox="0 0 400 800" preserveAspectRatio="none" aria-hidden="true"><path d="M-20 120C80 40 200 160 300 90S420 40 440 100"/><path d="M-30 260C90 180 180 320 320 230S430 200 450 260"/><path d="M-20 560C100 480 200 640 330 540S430 520 450 600"/><path d="M-30 700C80 640 220 760 340 680"/></svg>';
 const BOX='<svg viewBox="0 0 200 200" width="190" height="190" aria-hidden="true"><circle cx="100" cy="100" r="92" fill="#ffe1e1"/><rect x="40" y="62" width="120" height="86" rx="6" fill="#fff" stroke="#ff5a5f" stroke-width="3"/><rect x="34" y="52" width="132" height="14" rx="4" fill="#ff5a5f"/><rect x="62" y="56" width="76" height="5" rx="2.5" fill="#fff"/><g font-family="Inter,sans-serif" font-weight="800" font-size="13" fill="#ff5a5f"><g transform="rotate(-12 80 98)"><rect x="62" y="80" width="40" height="30" rx="3" fill="#fff" stroke="#ff9a9a"/><text x="68" y="100">Vote</text></g><g transform="rotate(10 124 104)"><rect x="106" y="86" width="40" height="30" rx="3" fill="#fff" stroke="#ff9a9a"/><text x="112" y="106">Vote</text></g></g></svg>';
-let scr='home',verr=null,doneInfo=null,doneTm;
-function goHome(){clearTimeout(doneTm);scr='home';sel=null;voter=null;info=null;verr=null;render()}
+let vmOpen=null,scr='home',verr=null,doneInfo=null,doneTm;
+function goHome(){clearTimeout(doneTm);vmOpen=null;scr='home';sel=null;voter=null;info=null;verr=null;render()}
 function renderBilik(app){scr==='home'?bHome(app):scr==='done'?bDone(app):bVote(app)}
 function bHome(app){
-  app.innerHTML=`<div class="home">${CONT}${FSB()}<div class="hm">${logo()}<h1>${esc(cfg.title)}</h1><p>Gunakan hak pilihmu dengan mudah!</p></div>
-  <div class="hb">${cfg.open?'<button class="pill-w" id="go">Mulai memilih</button>':'<div class="closed">Pemilihan sedang ditutup</div>'}<div class="sch">${esc(cfg.school)}</div></div></div>`;
+  app.innerHTML=`<div class="home">${CONT}${FSB()}<div class="hm">${logo()}<h1>${esc(cfg.title)}</h1></div>
+  <div class="hb"><p class="tg">Gunakan hak pilihmu dengan mudah!</p>${cfg.open?'<button class="pill-w" id="go">Mulai memilih</button>':'<div class="closed">Pemilihan sedang ditutup</div>'}<div class="sch">${esc(cfg.school)}</div></div></div>`;
   const g=$('#go');if(g)g.onclick=()=>{scr='vote';render()};
 }
 function bVote(app){
-  const cur=cfg.candidates.find(k=>k.no===sel);
-  const pc=cfg.candidates.map(k=>`<div class="pc ${sel===k.no?'sel':''}" data-no="${esc(k.no)}"><span class="no">${esc(k.no)}</span><span class="chk">✓</span>${photos(k)}<div class="pn">${esc(k.name)}</div></div>`).join('');
+  const cur=cfg.candidates.find(k=>k.no===sel),vk=cfg.candidates.find(k=>k.no===vmOpen);
+  const pc=cfg.candidates.map(k=>`<div class="pc ${sel===k.no?'sel':''}" data-no="${esc(k.no)}"><span class="no">${esc(k.no)}</span><span class="chk">✓</span>${photos(k)}<div class="pn">${esc(k.name)}</div>${(k.visi||k.misi)?`<button class="vm" type="button" data-vm="${esc(k.no)}">Lihat visi & misi</button>`:''}</div>`).join('');
+  const li=t=>String(t).split('\n').map(x=>x.replace(/^\s*(\d+[.)]|[-•*])\s*/,'').trim()).filter(Boolean).map(x=>`<li>${esc(x)}</li>`).join('');
+  const sheet=vk?`<div class="sbg" id="sbg"><div class="shs" role="dialog" aria-modal="true"><h3>Paslon ${esc(vk.no)}</h3><div class="sub">${esc(vk.name)}</div>${vk.visi?`<h4>Visi</h4><p>${esc(vk.visi)}</p>`:''}${vk.misi?`<h4>Misi</h4><ol>${li(vk.misi)}</ol>`:''}<div class="row" style="margin-top:18px"><button class="sec" id="vmx" style="flex:1">Tutup</button><button id="vmp" style="flex:1">Pilih paslon ${esc(vk.no)}</button></div></div></div>`:'';
   app.innerHTML=`<div class="vt">${FSB()}<div class="vh"><button class="back" id="bk" aria-label="Kembali">‹</button><div><b>${esc(cfg.title)}</b><small>${esc(cfg.school)}</small></div></div>
   ${verr?`<div class="msg er" id="fl">${esc(verr)}</div>`:''}
-  <div class="sec">Masukkan NIS</div><input id="code" autocomplete="off" inputmode="numeric" placeholder="Contoh: 12345" value="${esc(voter||'')}"><div id="who"></div>
-  <div class="sec">Pilih paslon</div><div class="grid">${pc||'<span class="sub">Belum ada paslon.</span>'}</div>
-  <div class="dock"><span>${cur?'Pilihanmu: <b>Paslon '+esc(cur.no)+'</b>':'Belum memilih'}</span><button class="cta" id="send" ${sel?'':'disabled'}>Kirim suara</button></div></div>`;
+  <div class="sh">Masukkan NIS</div><input id="code" autocomplete="off" inputmode="numeric" placeholder="Contoh: 12345" value="${esc(voter||'')}"><div id="who"></div>
+  <div class="sh">Pilih paslon</div><div class="grid">${pc||'<span class="sub">Belum ada paslon.</span>'}</div>
+  <div class="dock"><span>${cur?'Pilihanmu: <b>Paslon '+esc(cur.no)+'</b>':'Belum memilih'}</span><button class="cta" id="send" ${sel?'':'disabled'}>Kirim suara</button></div></div>${sheet}`;
+  const keep=()=>{voter=$('#code').value};
   $('#bk').onclick=goHome;
-  app.querySelectorAll('.pc').forEach(e=>e.onclick=()=>{voter=$('#code').value;sel=e.dataset.no;verr=null;bVote(app)});
+  app.querySelectorAll('.pc').forEach(e=>e.onclick=ev=>{if(ev.target.closest('.vm'))return;keep();sel=e.dataset.no;verr=null;bVote(app)});
+  app.querySelectorAll('.vm').forEach(b=>b.onclick=()=>{keep();vmOpen=b.dataset.vm;bVote(app)});
+  if(vk){$('#vmx').onclick=()=>{vmOpen=null;bVote(app)};$('#sbg').onclick=e=>{if(e.target.id==='sbg'){vmOpen=null;bVote(app)}};$('#vmp').onclick=()=>{sel=vmOpen;vmOpen=null;verr=null;bVote(app)}}
   $('#send').onclick=submit;
   const ci=$('#code');ci.oninput=lookup;showWho();
   const f=$('#fl');if(f)f.scrollIntoView({block:'center'});
@@ -301,32 +342,50 @@ async function submit(){
   try{await db.ref().update(up);doneInfo={n:info.n,k:info.k};sel=null;voter=null;info=null;verr=null;scr='done';render();doneTm=setTimeout(goHome,9000)}
   catch(e){verr=e.code==='PERMISSION_DENIED'?'Suara ditolak: NIS sudah dipakai atau akses tidak sah.':'Gagal mengirim: '+e.message;bVote(app)}
 }
+let atab='umum';
 function renderAdmin(app){
-  const up=(f,i)=>`<div style="flex:1;min-width:200px"><small class="sub">Foto ${f==='photoK'?'ketua':'wakil'}</small>${cfg.candidates[i][f]?`<img src="${esc(cfg.candidates[i][f])}" style="height:50px;border-radius:6px;vertical-align:middle;margin:0 6px">`:''}<input type="file" accept="image/*" data-up="${f}" data-i="${i}"></div>`;
-  const rows=cfg.candidates.map((k,i)=>`<div class="card"><div class="row"><input style="width:70px" data-f="no" data-i="${i}" value="${esc(k.no)}"><input style="flex:1" data-f="name" data-i="${i}" value="${esc(k.name)}" placeholder="Nama Ketua & Wakil"><button class="sec" data-del="${i}">Hapus</button></div><div class="row" style="margin-top:8px">${up('photoK',i)}${up('photoW',i)}</div></div>`).join('');
-  app.innerHTML=`<main><div class="row" style="justify-content:space-between"><h1>Panel Panitia</h1><button class="sec" id="out">Keluar</button></div>
-  <div class="card"><label>Judul pemilihan</label><input id="ttl" value="${esc(cfg.title)}"><label style="display:block;margin-top:10px">Nama sekolah</label><input id="sch" value="${esc(cfg.school)}">
-  <div class="row" style="margin-top:10px">${logo()}<div><small class="sub">Logo sekolah</small><input type="file" accept="image/*" id="lg"></div></div></div>${rows}
-  <div class="row" style="margin-bottom:12px"><button class="sec" id="add">+ Tambah paslon</button></div>
-  <div class="card"><label>Data siswa (satu per baris: <code>NIS,Nama,Kelas</code>)</label><div class="row" style="margin:8px 0"><span class="sub">Impor CSV:</span><input type="file" accept=".csv,.txt" id="csv" style="width:auto"></div><textarea id="vt" rows="5" placeholder="Tempel data dari Excel di sini"></textarea>
-  <div class="row" style="margin-top:8px"><button id="imp">Simpan data siswa</button><span class="sub">Tersimpan: ${stats.total||0} siswa · Sudah memilih: ${stats.voted||0}</span></div></div>
-  <div class="row"><button id="save">Simpan pengaturan</button><button class="sec" id="tog">${cfg.open?'Tutup pemilihan':'Buka pemilihan'}</button><button class="dan" id="rst">Reset semua suara</button></div>
-  ${flash?`<div class="msg ${flash.t}">${esc(flash.m)}</div>`:''}</main>`;
-  const read=()=>{cfg.title=$('#ttl').value;cfg.school=$('#sch').value;app.querySelectorAll('[data-f]').forEach(e=>cfg.candidates[e.dataset.i][e.dataset.f]=e.value)};
+  const C=cfg.candidates,tot=stats.total||0,v=stats.voted||0,base=location.href.split('#')[0];
+  const tile=(l,x)=>`<div class="at"><b>${x}</b><span>${l}</span></div>`;
+  const tabs=[['umum','Umum'],['paslon','Paslon'],['siswa','Data siswa'],['kontrol','Kontrol']].map(([k,l])=>`<button class="ab ${atab===k?'on':''}" data-at="${k}">${l}</button>`).join('');
+  const photo=(f,i,l)=>`<label class="up"><input type="file" accept="image/*" data-up="${f}" data-i="${i}" hidden>${C[i][f]?`<img src="${esc(C[i][f])}" alt="">`:'<span class="pl">+</span>'}<small>Foto ${l} · ${C[i][f]?'ganti':'unggah'}</small></label>`;
+  const link=(l,u)=>`<label class="fl">${l}</label><div class="lk"><input readonly value="${esc(u)}"><button class="sec sm" data-copy="${esc(u)}">Salin</button></div>`;
+  let body='';
+  if(atab==='umum')body=`<div class="card"><h2>Identitas pemilihan</h2><label class="fl">Judul pemilihan</label><input id="ttl" value="${esc(cfg.title)}"><label class="fl">Nama sekolah</label><input id="sch" value="${esc(cfg.school)}"><label class="fl">Logo sekolah</label><div class="row">${logo()}<label class="btn">Ganti logo<input type="file" id="lg" accept="image/*" hidden></label></div></div>`;
+  if(atab==='paslon')body=C.map((k,i)=>`<div class="card"><div class="ph2"><span class="no2">${esc(k.no)}</span><b>Paslon ${esc(k.no)}</b><button class="sec sm" data-del="${i}">Hapus</button></div>
+    <div class="g2"><div><label class="fl">No. urut</label><input data-f="no" data-i="${i}" value="${esc(k.no)}" inputmode="numeric"></div><div><label class="fl">Nama ketua &amp; wakil</label><input data-f="name" data-i="${i}" value="${esc(k.name)}"></div></div>
+    <label class="fl">Foto</label><div class="ups">${photo('photoK',i,'ketua')}${photo('photoW',i,'wakil')}</div>
+    <label class="fl">Visi</label><textarea rows="3" data-f="visi" data-i="${i}">${esc(k.visi||'')}</textarea>
+    <label class="fl">Misi <span class="sub">(satu poin per baris)</span></label><textarea rows="5" data-f="misi" data-i="${i}">${esc(k.misi||'')}</textarea></div>`).join('')+'<button class="sec add" id="add">+ Tambah paslon</button>';
+  if(atab==='siswa')body=`<div class="card"><h2>Data siswa</h2><p class="sub" style="margin:0 0 8px">Satu siswa per baris dengan format <code>NIS,Nama,Kelas</code>. Bisa impor CSV atau tempel dari Excel.</p>
+    <label class="btn">Impor file CSV<input type="file" id="csv" accept=".csv,.txt" hidden></label>
+    <textarea id="vt" rows="8" placeholder="NIS,Nama,Kelas&#10;12345,Andi Pratama,XI RPL 1" style="margin-top:10px"></textarea>
+    <div class="row" style="margin-top:10px"><button id="imp">Simpan data siswa</button><span class="sub">Tersimpan: ${tot} siswa</span></div></div>`;
+  if(atab==='kontrol')body=`<div class="card"><h2>Status pemilihan</h2><p class="sub" style="margin:0 0 10px">Saat ini: <b style="color:${cfg.open?'var(--ok)':'var(--bad)'}">${cfg.open?'DIBUKA':'DITUTUP'}</b></p><button id="tog" class="${cfg.open?'sec':''}">${cfg.open?'Tutup pemilihan':'Buka pemilihan'}</button></div>
+    <div class="card"><h2>Tautan</h2>${link('Layar hitung (projector)',base)}${link('Bilik suara (HP bilik)',base+'#bilik')}</div>
+    <div class="card dz"><h2>Zona berbahaya</h2><p class="sub" style="margin:0 0 10px">Menghapus semua suara dan status memilih. Lakukan setelah uji coba, sebelum hari pemilihan.</p><button class="dan" id="rst">Reset semua suara</button></div>`;
+  app.innerHTML=`<div class="adm"><div class="ah"><div><h1>Panel Panitia</h1><div class="sub">${esc(cfg.school)}</div></div><button class="sec sm" id="out">Keluar</button></div>
+  <div class="atl">${tile('Siswa',tot)}${tile('Sudah memilih',v)}${tile('Belum memilih',Math.max(0,tot-v))}${tile('Total suara',Object.values(tally).reduce((a,b)=>a+b,0))}</div>
+  <div class="atabs">${tabs}</div>${flash?`<div class="msg ${flash.t}" style="margin:0 0 12px">${esc(flash.m)}</div>`:''}${body}
+  ${(atab==='umum'||atab==='paslon')?'<div class="sbar"><button id="save">Simpan perubahan</button></div>':''}</div>`;
+  const read=()=>{const t=$('#ttl');if(t)cfg.title=t.value;const sc=$('#sch');if(sc)cfg.school=sc.value;app.querySelectorAll('[data-f]').forEach(e=>{if(cfg.candidates[e.dataset.i])cfg.candidates[e.dataset.i][e.dataset.f]=e.value})};
+  app.oninput=read;
   const run=async(fn,ok)=>{try{await fn();flash={t:'ok',m:ok}}catch(e){flash={t:'er',m:'Gagal: '+(e.message||e.code)}}renderAdmin(app)};
   const saveCfg=m=>run(()=>db.ref('config').set(cfg),m);
-  $('#out').onclick=()=>auth.signOut();
-  $('#add').onclick=()=>{read();cfg.candidates.push({no:String(cfg.candidates.length+1),name:'',photoK:'',photoW:''});renderAdmin(app)};
-  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{read();cfg.candidates.splice(b.dataset.del,1);renderAdmin(app)});
+  const on=(id,fn)=>{const e=$(id);if(e)e.onclick=fn};
+  app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{read();flash=null;atab=b.dataset.at;renderAdmin(app)});
+  app.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{try{navigator.clipboard.writeText(b.dataset.copy);b.textContent='Tersalin ✓'}catch(e){}});
+  on('#out',()=>auth.signOut());
+  on('#add',()=>{read();cfg.candidates.push({no:String(cfg.candidates.length+1),name:'',photoK:'',photoW:'',visi:'',misi:''});renderAdmin(app)});
+  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(!confirm('Hapus paslon ini?'))return;read();cfg.candidates.splice(b.dataset.del,1);renderAdmin(app)});
   app.querySelectorAll('[data-up]').forEach(e=>e.onchange=async()=>{const f=e.files[0];if(!f)return;read();cfg.candidates[e.dataset.i][e.dataset.up]=await shrink(f,520,'image/jpeg');saveCfg('Foto diunggah.')});
-  $('#lg').onchange=async e=>{const f=e.target.files[0];if(!f)return;read();cfg.logo=await shrink(f,256,'image/png');saveCfg('Logo diunggah.')};
-  $('#save').onclick=()=>{read();saveCfg('Tersimpan.')};
-  $('#tog').onclick=()=>{read();cfg.open=!cfg.open;saveCfg(cfg.open?'Pemilihan dibuka.':'Pemilihan ditutup.')};
-  $('#csv').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#vt').value=String(r.result).replace(/^\uFEFF/,'')};r.readAsText(f)};
-  $('#imp').onclick=()=>{const o={};let n=0;String($('#vt').value).replace(/\r/g,'').split('\n').forEach((l,i)=>{if(!l.trim())return;const p=l.split(/[,;\t]/);if(i===0&&/nis/i.test(p[0]))return;const id=slug(p[0]);if(!id)return;o[id]={n:(p[1]||'').trim(),k:(p[2]||'').trim()};n++});
+  const lg=$('#lg');if(lg)lg.onchange=async e=>{const f=e.target.files[0];if(!f)return;read();cfg.logo=await shrink(f,256,'image/png');saveCfg('Logo diunggah.')};
+  on('#save',()=>{read();saveCfg('Perubahan tersimpan.')});
+  on('#tog',()=>{cfg.open=!cfg.open;saveCfg(cfg.open?'Pemilihan dibuka.':'Pemilihan ditutup.')});
+  const csv=$('#csv');if(csv)csv.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#vt').value=String(r.result).replace(/^\uFEFF/,'')};r.readAsText(f)};
+  on('#imp',()=>{const o={};let n=0;String($('#vt').value).replace(/\r/g,'').split('\n').forEach((l,i)=>{if(!l.trim())return;const p=l.split(/[,;\t]/);if(i===0&&/nis/i.test(p[0]))return;const id=slug(p[0]);if(!id)return;o[id]={n:(p[1]||'').trim(),k:(p[2]||'').trim()};n++});
     if(!n){flash={t:'er',m:'Tidak ada data yang bisa dibaca.'};return renderAdmin(app)}
-    run(()=>db.ref().update({voters:o,'stats/total':n}),n+' siswa tersimpan.')};
-  $('#rst').onclick=()=>{if(!confirm('Hapus SEMUA suara dan status memilih?'))return;run(()=>db.ref().update({tally:null,voted:null,'stats/voted':0}),'Semua suara direset.')};
+    run(()=>db.ref().update({voters:o,'stats/total':n}),n+' siswa tersimpan.')});
+  on('#rst',()=>{if(!confirm('Hapus SEMUA suara dan status memilih?'))return;run(()=>db.ref().update({tally:null,voted:null,'stats/voted':0}),'Semua suara direset.')});
 }
 
 if(!FB.apiKey.startsWith('ISI')){
