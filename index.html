@@ -235,6 +235,35 @@ input[type=file]{font-size:.85rem;max-width:100%}
  .live .cols:not(.many) .col .badge{font-size:calc(min(2.4cqw,2vh)*var(--k))}
  .live .cols:not(.many) .col .big{left:auto;right:2cqw;transform:none;font-size:min(36cqw,42vh)}
 }
+/* penanda pilihan: hijau agar berbeda dari tema oranye */
+.pc.sel{border-color:#16a34a;background:#f3fbf6;box-shadow:0 8px 28px rgba(22,163,74,.22)}
+.pc .chk{background:#16a34a;font-size:1.3rem;box-shadow:0 4px 12px rgba(22,163,74,.4)}
+.grid:has(.pc.sel) .pc:not(.sel){opacity:.6}
+.dock b{color:#15803d}
+/* hiasan layar hitung */
+.live{position:relative;overflow:hidden;background:linear-gradient(165deg,#fff 0%,#fff8f3 48%,#ffe9dd 100%)}
+.live>:not(.orn){position:relative;z-index:1}
+.orn{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.orn i{position:absolute;display:block}
+.o1{width:46vw;height:46vw;right:-14vw;top:-20vw;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,122,47,.30),rgba(255,61,90,.16) 55%,transparent 70%);animation:drift 22s ease-in-out infinite alternate}
+.o2{width:42vw;height:42vw;left:-12vw;bottom:-18vw;border-radius:50%;background:radial-gradient(circle,rgba(255,150,70,.24),transparent 68%);animation:drift 26s ease-in-out infinite alternate-reverse}
+.o3{width:10vw;height:10vw;right:7vw;bottom:15vh;border-radius:50%;border:2px solid rgba(255,90,60,.2);box-shadow:0 0 0 1.2vw rgba(255,90,60,.05)}
+.dt{width:12vw;height:8vw;background-image:radial-gradient(rgba(255,90,60,.38) 1.6px,transparent 1.9px);background-size:14px 14px}
+.d1{left:2.5vw;top:15vh}.d2{right:3.5vw;bottom:20vh}
+.ln{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:rgba(255,90,60,.17);stroke-width:1.4}
+.ln path{vector-effect:non-scaling-stroke}
+.wv{position:absolute;left:0;right:0;bottom:0;width:100%;height:24vh;opacity:.13}
+@keyframes drift{to{transform:translate(1.6vw,1.2vh)}}
+@media (prefers-reduced-motion:reduce){.o1,.o2{animation:none}}
+.live img.logo{background:#fff;border-radius:50%;padding:.5vh;box-shadow:0 6px 18px rgba(255,90,60,.28)}
+.hd h1::after{content:"";display:block;width:clamp(60px,6vw,120px);height:6px;border-radius:99px;background:var(--g);margin-top:.3em}
+.live .clk{background:#fff;color:var(--tx);padding:.15em .65em;border-radius:99px;border:2px solid rgba(255,140,90,.28);box-shadow:0 4px 14px rgba(255,90,60,.12)}
+.live .lv{box-shadow:0 4px 14px rgba(255,90,60,.12);border-color:rgba(255,140,90,.28)}
+.live .col{background:linear-gradient(180deg,#fff 0%,#fffaf7 100%);border:2px solid rgba(255,140,90,.26);box-shadow:0 14px 40px rgba(255,90,60,.12),0 2px 6px rgba(120,60,20,.06)}
+.live .col::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--g)}
+.live .col.lead{border-color:var(--acc);box-shadow:0 0 0 4px rgba(255,90,60,.12),0 18px 60px rgba(255,90,60,.35)}
+.live .stats{background:linear-gradient(135deg,#fff 0%,#fff1e8 100%);border:2px solid rgba(255,140,90,.26);box-shadow:0 10px 30px rgba(255,90,60,.12)}
+.live .col .bar i{box-shadow:0 0 12px rgba(255,90,60,.35)}
 </style>
 </head>
 <body>
@@ -307,7 +336,7 @@ function renderLive(app){
     return `<div class="cell"><div class="col ${ld?'lead':''}" style="--cc:var(--c${i%2+1})"><span class="big">${esc(k.no)}</span>${ld?'<span class="tag">Unggul</span>':''}${photos(k)}<div class="inf"><span class="badge">Nomor urut ${esc(k.no)}</span><div class="nm">${esc(k.name)}</div>
     <div class="pct">${p}%</div><div class="bar"><i style="width:${p}%"></i></div><div class="cn">${n} suara</div></div></div></div>`}).join('');
   const dpt=stats.total||0,v=stats.voted||0;
-  app.innerHTML=`<div class="live"><div class="hd"><div class="hl">${logo()}<h1>${esc(cfg.title)}</h1></div><div class="hr"><span class="lv">LIVE COUNTING</span><span class="clk" id="clk"></span></div></div>
+  app.innerHTML=`<div class="live">${ORN}<div class="hd"><div class="hl">${logo()}<h1>${esc(cfg.title)}</h1></div><div class="hr"><span class="lv">LIVE COUNTING</span><span class="clk" id="clk"></span></div></div>
   <div class="cols${cfg.candidates.length>2?' many':''}" style="--n:${Math.min(cfg.candidates.length||1,4)}">${cols||'<div class="col">Belum ada paslon. Atur di Panel Panitia.</div>'}</div>
   <div class="stats"><div><b>${dpt||'–'}</b><span>Total pemilih</span></div><div><b>${dpt?Math.max(0,dpt-v):'–'}</b><span>Belum memilih</span></div><div><b>${v}</b><span>Sudah memilih</span></div><div><b>${dpt?(v/dpt*100).toFixed(1)+'%':'–'}</b><span>Partisipasi</span></div></div>
   <div style="text-align:center"><span class="pill ${cfg.open?'':'off'}">${cfg.open?'Pemilihan masih aktif':'Pemilihan ditutup'}${(stats.guru||cfg.guruTotal)?' · Suara guru: '+(stats.guru||0)+(cfg.guruTotal?' / '+cfg.guruTotal:''):''}</span></div></div>`;
@@ -331,6 +360,7 @@ function showWho(){const w=$('#who');if(!w)return;if(!info){w.innerHTML='';retur
   const l=esc(info.n||info.id)+(info.k?' · Kelas '+esc(info.k):'');
   w.innerHTML=!info.found?'<div class="msg er">NIS tidak ditemukan di daftar pemilih</div>':info.done?`<div class="msg er">⚠ ${l} sudah menggunakan hak pilihnya.</div>`:`<div class="msg ok">✓ ${l}</div>`}
 
+const ORN='<div class="orn" aria-hidden="true"><i class="o1"></i><i class="o2"></i><i class="o3"></i><i class="dt d1"></i><i class="dt d2"></i><svg class="ln" viewBox="0 0 1440 900" preserveAspectRatio="none"><path d="M-20 180C220 90 420 250 700 170S1200 60 1460 150"/><path d="M-20 330C240 240 460 400 740 320S1220 210 1460 300"/><path d="M-20 690C260 600 520 780 820 700S1240 600 1460 680"/></svg><svg class="wv" viewBox="0 0 1440 220" preserveAspectRatio="none"><defs><linearGradient id="wg" x1="0" x2="1"><stop offset="0" stop-color="#ff7a2f"/><stop offset="1" stop-color="#ff3d5a"/></linearGradient></defs><path fill="url(#wg)" d="M0 120C240 40 480 200 760 120S1200 40 1440 110V220H0Z"/></svg></div>';
 const CONT='<svg class="cont" viewBox="0 0 400 800" preserveAspectRatio="none" aria-hidden="true"><path d="M-20 120C80 40 200 160 300 90S420 40 440 100"/><path d="M-30 260C90 180 180 320 320 230S430 200 450 260"/><path d="M-20 560C100 480 200 640 330 540S430 520 450 600"/><path d="M-30 700C80 640 220 760 340 680"/></svg>';
 const BOX='<svg viewBox="0 0 200 200" width="190" height="190" aria-hidden="true"><circle cx="100" cy="100" r="92" fill="#ffe1e1"/><rect x="40" y="62" width="120" height="86" rx="6" fill="#fff" stroke="#ff5a5f" stroke-width="3"/><rect x="34" y="52" width="132" height="14" rx="4" fill="#ff5a5f"/><rect x="62" y="56" width="76" height="5" rx="2.5" fill="#fff"/><g font-family="Inter,sans-serif" font-weight="800" font-size="13" fill="#ff5a5f"><g transform="rotate(-12 80 98)"><rect x="62" y="80" width="40" height="30" rx="3" fill="#fff" stroke="#ff9a9a"/><text x="68" y="100">Vote</text></g><g transform="rotate(10 124 104)"><rect x="106" y="86" width="40" height="30" rx="3" fill="#fff" stroke="#ff9a9a"/><text x="112" y="106">Vote</text></g></g></svg>';
 let vmOpen=null,scr='home',verr=null,doneInfo=null,doneTm;
