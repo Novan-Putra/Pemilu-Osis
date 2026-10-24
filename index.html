@@ -268,6 +268,16 @@ input[type=file]{font-size:.85rem;max-width:100%}
 .acc .grow{flex:1;min-width:0;overflow-wrap:anywhere}.acc b{display:block}.acc small{color:var(--mut)}
 .gnote{margin-left:1.2vw;color:var(--mut);font-weight:700;font-size:min(1.2vw,2.2vh)}
 @media (max-aspect-ratio:1/1){.gnote{display:block;margin:6px 0 0;font-size:.78rem}}
+/* rekap */
+.rb{margin:10px 0}.rl{display:flex;justify-content:space-between;gap:10px;font-size:.88rem;margin-bottom:4px}.rl span{color:var(--mut);font-weight:700;white-space:nowrap}
+.rt{height:10px;background:#f5ede9;border-radius:99px;overflow:hidden}.rt i{display:block;height:100%;background:var(--g);border-radius:99px}
+.hc{display:flex;align-items:flex-end;gap:3px;height:170px;padding-top:16px}.hc>div{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.hc i{width:100%;background:var(--g);border-radius:6px 6px 0 0}.hc em{font-style:normal;font-size:.62rem;color:var(--mut);height:12px}.hc small{font-size:.62rem;color:var(--mut);height:14px;white-space:nowrap}
+select{padding:11px 14px;border:1.5px solid var(--bd);border-radius:14px;background:#fff;font:inherit;max-width:100%}
+.sr{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--bd);flex-wrap:wrap}.sr .grow{flex:1;min-width:150px}.sr b{display:block}.sr small{color:var(--mut)}
+.chip{padding:4px 12px;border-radius:99px;font-weight:800;font-size:.8rem}.chip.y{background:#e8f6ed;color:var(--ok)}.chip.n{background:#f3efec;color:var(--mut)}
+.rep h1{margin:0}
+@media print{nav,.ah,.atabs,.rsubs,.sbar,.fsb,.noprint{display:none!important}.adm{padding:0;max-width:none}.card,.msg,.atl{break-inside:avoid;box-shadow:none}body{background:#fff}}
 </style>
 </head>
 <body>
@@ -430,6 +440,105 @@ async function submit(){
   catch(e){verr=e.code==='PERMISSION_DENIED'?'Suara ditolak: NIS sudah dipakai atau akses tidak sah.':'Gagal mengirim: '+e.message;bVote(app)}
 }
 let gvoted=false,gloaded=null,anonTry=false,gerr=null;
+let rk={v:null,d:null,busy:false,err:false},rsub='ring',rf={tk:'',jr:'',kl:'',st:'belum',q:'',sq:''};
+const pct=(a,b)=>b?Math.round(a/b*1000)/10:0;
+const tmf=t=>new Date(t).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}).replace('.',':');
+async function rkLoad(force){
+  if(rk.busy)return;rk.busy=true;rk.err=false;
+  try{const[a,b]=await Promise.all([(force||!rk.v)?db.ref('voters').get():null,db.ref('voted').get()]);if(a)rk.v=a.val()||{};rk.d=b.val()||{}}
+  catch(e){rk.err=true;flash={t:'er',m:'Gagal memuat data: '+(e.message||e.code)}}
+  rk.busy=false;if(tab==='admin'&&(atab==='rekap'||atab==='siswa')&&!typing())renderAdmin($('#app'));
+}
+setInterval(()=>{if(tab==='admin'&&role==='admin'&&atab==='rekap')rkLoad(false)},30000);
+function pk(k){
+  const raw=String(k||'').toUpperCase().replace(/[-_.\/]+/g,' ').replace(/\s+/g,' ').trim();
+  if(!raw)return{t:'?',j:'?',c:'Tanpa kelas'};
+  const m={'10':'X','11':'XI','12':'XII','X':'X','XI':'XI','XII':'XII'};let p=raw.split(' '),t='?';
+  if(m[p[0]]){t=m[p.shift()]}else{const x=p[0].match(/^(XII|XI|X|12|11|10)(.+)$/);if(x){t=m[x[1]];p[0]=x[2]}}
+  let r='';if(p.length>1&&/^\d+$/.test(p[p.length-1]))r=p.pop();
+  let j=p.join(' ');const y=j.match(/^([A-Z ]+?)(\d+)$/);if(!r&&y){j=y[1].trim();r=y[2]}
+  j=j||'?';return{t,j,c:(t==='?'?'':t+' ')+j+(r?' '+r:'')};
+}
+function agg(kf,flt){const g={};Object.entries(rk.v).forEach(([id,x])=>{const q=pk(x.k);if(flt&&!flt(q))return;const k=kf(q),o=g[k]||(g[k]={n:k,tot:0,vot:0});o.tot++;if(rk.d[id])o.vot++});return Object.values(g)}
+const brow=(l,r,p)=>`<div class="rb"><div class="rl"><b>${esc(l)}</b><span>${r}</span></div><div class="rt"><i style="width:${Math.min(100,p)}%"></i></div></div>`;
+const grows=a=>a.sort((x,y)=>pct(y.vot,y.tot)-pct(x.vot,x.tot)||x.n.localeCompare(y.n)).map(o=>brow(o.n,o.vot+'/'+o.tot+' · '+pct(o.vot,o.tot)+'%',pct(o.vot,o.tot))).join('')||'<p class="sub">Tidak ada data.</p>';
+function hourly(){
+  const B=1800000,ts=Object.values(rk.d).filter(x=>typeof x==='number');if(!ts.length)return '<p class="sub">Belum ada suara siswa.</p>';
+  const c={};ts.forEach(t=>{const k=Math.floor(t/B);c[k]=(c[k]||0)+1});
+  const ks=Object.keys(c).map(Number),lo=Math.max(Math.min(...ks),Math.max(...ks)-47),hi=Math.max(...ks),a=[];for(let k=lo;k<=hi;k++)a.push([k,c[k]||0]);
+  const mx=Math.max(...a.map(x=>x[1])),st=Math.ceil(a.length/8);
+  return `<div class="hc">${a.map(([k,n],i)=>`<div title="${tmf(k*B)} : ${n} suara"><em>${n||''}</em><i style="height:${Math.max(2,n/mx*100)}%"></i><small>${i%st===0?tmf(k*B):''}</small></div>`).join('')}</div>`;
+}
+function secRing(){
+  const tot=Object.values(tally).reduce((a,b)=>a+b,0),sv=Object.keys(rk.d).length,gN=stats.guru||0,gT=cfg.guruTotal||0,sT=stats.total||0,all=sT+Math.max(gT,gN),vv=sv+gN;
+  const cs=cfg.candidates.map(k=>({k,n:tally[slug(k.no)]||0})).sort((a,b)=>b.n-a.n),gap=cs.length>1?cs[0].n-cs[1].n:0;
+  const t=(l,x)=>`<div class="at"><b>${x}</b><span>${l}</span></div>`;
+  return `<div class="atl">${t('Total suara',tot)}${t('Partisipasi',all?pct(vv,all)+'%':'–')}${t('Siswa',sT?pct(sv,sT)+'%':'–')}${t('Guru',gT?pct(gN,gT)+'%':gN)}</div>
+  <div class="msg ${tot===vv?'ok':'er'}" style="margin:0 0 12px">${tot===vv?'✓ Data konsisten: jumlah suara ('+tot+') sama dengan jumlah pemilih tercatat ('+vv+').':'⚠ Selisih '+Math.abs(tot-vv)+' suara: suara '+tot+' vs pemilih tercatat '+vv+'. Periksa data.'}</div>
+  <div class="card"><h2>Perolehan paslon</h2>${cs.map(o=>brow('No '+o.k.no+' · '+o.k.name,o.n+' suara · '+pct(o.n,tot)+'%',pct(o.n,tot))).join('')}${cs.length>1?'<p class="sub" style="margin:8px 0 0">Selisih paslon teratas dan kedua: <b>'+gap+' suara</b></p>':''}</div>
+  <div class="card"><h2>Suara masuk per 30 menit</h2>${hourly()}</div>`;
+}
+function secKelas(nf){
+  const all=Object.values(rk.v).map(x=>pk(x.k)),uq=a=>[...new Set(a)].sort();
+  const flt=nf?null:q=>(!rf.tk||q.t===rf.tk)&&(!rf.jr||q.j===rf.jr);
+  const sel=(id,v,o,l)=>`<select id="${id}"><option value="">${l}</option>${o.map(x=>`<option ${x===v?'selected':''}>${esc(x)}</option>`).join('')}</select>`;
+  return `<div class="card"><h2>Partisipasi per kelas</h2>${nf?'':`<div class="row" style="margin:6px 0 10px">${sel('ftk',rf.tk,uq(all.map(x=>x.t)),'Semua tingkat')}${sel('fjr',rf.jr,uq(all.map(x=>x.j)),'Semua jurusan')}</div>`}${grows(agg(q=>q.c,flt))}</div>`;
+}
+function secJur(){
+  const gN=stats.guru||0,gT=cfg.guruTotal||0,sv=Object.keys(rk.d).length,sT=stats.total||0;
+  return `<div class="card"><h2>Per tingkat</h2>${grows(agg(q=>q.t==='?'?'Tanpa tingkat':'Kelas '+q.t))}</div><div class="card"><h2>Per jurusan</h2>${grows(agg(q=>q.j))}</div>
+  <div class="card"><h2>Siswa dan guru</h2>${brow('Siswa',sv+'/'+sT+' · '+pct(sv,sT)+'%',pct(sv,sT))}${brow('Guru',gN+(gT?'/'+gT+' · '+pct(gN,gT)+'%':' suara'),gT?pct(gN,gT):0)}</div>`;
+}
+function listRows(){const q=rf.q.toLowerCase();return Object.entries(rk.v).map(([id,x])=>({id,n:x.n||'',k:pk(x.k).c,v:rk.d[id]})).filter(r=>(!rf.kl||r.k===rf.kl)&&(rf.st==='all'||(rf.st==='belum'?!r.v:!!r.v))&&(!q||r.n.toLowerCase().includes(q)||r.id.includes(q))).sort((a,b)=>a.k.localeCompare(b.k)||a.n.localeCompare(b.n))}
+const srow=(r,act)=>`<div class="sr"><div class="grow"><b>${esc(r.n||r.id)}</b><small>${esc(r.id)} · ${esc(r.k)}</small></div><span class="chip ${r.v?'y':'n'}">${r.v?'✓ '+tmf(r.v):'Belum'}</span>${act?`<button class="sec sm" data-ed="${esc(r.id)}">Ubah</button><button class="dan sm" data-dl="${esc(r.id)}" ${r.v?'disabled title="Sudah memilih"':''}>Hapus</button>`:''}</div>`;
+const listHtml=()=>{const r=listRows();return `<p class="sub" style="margin:8px 0">${r.length} siswa${r.length>200?' (200 pertama ditampilkan)':''}</p>`+r.slice(0,200).map(x=>srow(x)).join('')};
+function secDaftar(){
+  const ks=[...new Set(Object.values(rk.v).map(x=>pk(x.k).c))].sort();
+  return `<div class="card"><h2>Daftar siswa</h2><div class="row" style="margin:6px 0"><select id="fkl"><option value="">Semua kelas</option>${ks.map(x=>`<option ${x===rf.kl?'selected':''}>${esc(x)}</option>`).join('')}</select>
+  <select id="fst">${[['belum','Belum memilih'],['sudah','Sudah memilih'],['all','Semua']].map(([v,l])=>`<option value="${v}" ${rf.st===v?'selected':''}>${l}</option>`).join('')}</select></div>
+  <input id="fq" placeholder="Cari nama atau NIS…" value="${esc(rf.q)}"><div id="dlist">${listHtml()}</div></div>`;
+}
+function dl(name,rows){const t='\uFEFF'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv;charset=utf-8'}));a.download=name;a.click()}
+function rekapBody(){
+  const subs=[['ring','Ringkasan'],['kelas','Per kelas'],['jur','Jurusan'],['daftar','Daftar'],['lap','Laporan']].map(([k,l])=>`<button class="ab ${rsub===k?'on':''}" data-rs="${k}">${l}</button>`).join('');
+  const top=`<div class="row noprint" style="justify-content:space-between;margin-bottom:10px"><div class="atabs rsubs" style="flex:1;margin:0">${subs}</div><button class="sec sm" id="rr">${rk.busy?'Memuat…':'Muat ulang'}</button></div>`;
+  if(!rk.v||!rk.d)return top+`<div class="card">${rk.err?'Data gagal dimuat. Tekan Muat ulang.':'Memuat data…'}</div>`;
+  if(!Object.keys(rk.v).length)return top+'<div class="card">Data siswa belum diimpor (tab Data siswa).</div>';
+  if(rsub==='ring')return top+secRing();
+  if(rsub==='kelas')return top+secKelas();
+  if(rsub==='jur')return top+secJur();
+  if(rsub==='daftar')return top+secDaftar();
+  return top+`<div class="card noprint"><h2>Unduh dan cetak</h2><div class="row"><button class="sec" id="dk">Rekap per kelas (CSV)</button><button class="sec" id="db2">Daftar belum memilih (CSV)</button><button id="pr">Cetak / simpan PDF</button></div></div><div class="rep"><h1>Rekapitulasi ${esc(cfg.title)}</h1><p class="sub">${esc(cfg.school)} · ${new Date().toLocaleString('id-ID')}</p>${secRing()}${secKelas(1)}${secJur()}</div>`;
+}
+function siswaCheck(){
+  if(!rk.v)return '<div class="card">Memuat data siswa…</div>';
+  const q=rf.sq.trim().toLowerCase(),hits=q?Object.entries(rk.v).map(([id,x])=>({id,n:x.n||'',k:pk(x.k).c,v:rk.d&&rk.d[id]})).filter(r=>r.n.toLowerCase().includes(q)||r.id.includes(slug(q))).slice(0,15):[];
+  return `<div class="card"><h2>Cek dan kelola siswa</h2><p class="sub" style="margin:0 0 8px">Terdaftar: <b>${Object.keys(rk.v).length}</b> siswa. Ketik NIS atau nama untuk memastikan seorang siswa sudah terdata.</p>
+  <input id="sq" placeholder="Cari NIS atau nama…" value="${esc(rf.sq)}"><div id="sres">${sres(hits,q)}</div>
+  <label class="fl">Tambah / ubah siswa</label><div class="g2"><input id="an" placeholder="NIS"><input id="am" placeholder="Nama lengkap"></div><input id="ak" placeholder="Kelas, misal XI RPL 1" style="margin-top:8px">
+  <div class="row" style="margin-top:10px"><button id="asv">Simpan siswa</button></div></div>`;
+}
+const sres=(h,q)=>q?(h.length?h.map(r=>srow(r,1)).join(''):'<p class="sub">Tidak ditemukan. Siswa ini belum terdata; tambahkan lewat formulir di bawah.</p>'):'';
+function rekapBind(app){
+  const on=(i,f)=>{const e=$(i);if(e)e.onclick=f};
+  app.querySelectorAll('[data-rs]').forEach(b=>b.onclick=()=>{rsub=b.dataset.rs;renderAdmin(app)});
+  on('#rr',()=>{rk.err=false;rkLoad(true)});
+  const ch=(i,f)=>{const e=$(i);if(e)e.onchange=()=>{f(e.value);renderAdmin(app)}};
+  ch('#ftk',v=>rf.tk=v);ch('#fjr',v=>rf.jr=v);ch('#fkl',v=>rf.kl=v);ch('#fst',v=>rf.st=v);
+  const fq=$('#fq');if(fq)fq.oninput=()=>{rf.q=fq.value;$('#dlist').innerHTML=listHtml()};
+  on('#pr',()=>window.print());
+  on('#dk',()=>{const a=agg(q=>q.c);dl('rekap-per-kelas.csv',[['Kelas','Terdaftar','Sudah memilih','Belum memilih','Partisipasi %']].concat(a.sort((x,y)=>x.n.localeCompare(y.n)).map(o=>[o.n,o.tot,o.vot,o.tot-o.vot,pct(o.vot,o.tot)])))});
+  on('#db2',()=>dl('belum-memilih.csv',[['NIS','Nama','Kelas']].concat(Object.entries(rk.v).filter(([id])=>!rk.d[id]).map(([id,x])=>[id,x.n||'',pk(x.k).c]).sort((a,b)=>a[2].localeCompare(b[2])||a[1].localeCompare(b[1])))));
+  const sq=$('#sq');if(sq)sq.oninput=()=>{rf.sq=sq.value;const q=sq.value.trim().toLowerCase();$('#sres').innerHTML=sres(q?Object.entries(rk.v).map(([id,x])=>({id,n:x.n||'',k:pk(x.k).c,v:rk.d&&rk.d[id]})).filter(r=>r.n.toLowerCase().includes(q)||r.id.includes(slug(q))).slice(0,15):[],q)};
+  const sr=$('#sres');if(sr)sr.onclick=async e=>{
+    const ed=e.target.closest('[data-ed]'),dd=e.target.closest('[data-dl]');
+    if(ed){const x=rk.v[ed.dataset.ed];$('#an').value=ed.dataset.ed;$('#am').value=x.n||'';$('#ak').value=x.k||'';$('#am').focus()}
+    if(dd&&!dd.disabled&&confirm('Hapus siswa ini dari daftar pemilih?')){try{await db.ref().update({['voters/'+dd.dataset.dl]:null,'stats/total':firebase.database.ServerValue.increment(-1)});delete rk.v[dd.dataset.dl];flash={t:'ok',m:'Siswa dihapus.'}}catch(x){flash={t:'er',m:'Gagal: '+x.message}}renderAdmin(app)}};
+  on('#asv',async()=>{const id=slug($('#an').value),n=$('#am').value.trim(),k=$('#ak').value.trim();
+    if(!id||!n){flash={t:'er',m:'NIS dan nama wajib diisi.'};return renderAdmin(app)}
+    const up={['voters/'+id]:{n,k}},isNew=!rk.v[id];if(isNew)up['stats/total']=firebase.database.ServerValue.increment(1);
+    try{await db.ref().update(up);rk.v[id]={n,k};rf.sq=n;flash={t:'ok',m:isNew?'Siswa ditambahkan.':'Data siswa diperbarui.'}}catch(x){flash={t:'er',m:'Gagal: '+x.message}}renderAdmin(app)});
+}
 let bi={},bform={n:'',e:'',p:''},biOn=false;
 async function makeBooth(name,email,pw){
   const ap=firebase.apps.find(a=>a.name==='sec')||firebase.initializeApp(FB,'sec'),a2=ap.auth();let uid;
@@ -444,9 +553,10 @@ async function makeBooth(name,email,pw){
 }
 let atab='umum';
 function renderAdmin(app){
+  if((atab==='rekap'||atab==='siswa')&&!rk.v&&!rk.busy&&!rk.err)rkLoad();
   const C=cfg.candidates,tot=stats.total||0,v=stats.voted||0,base=location.href.split('#')[0];
   const tile=(l,x)=>`<div class="at"><b>${x}</b><span>${l}</span></div>`;
-  const tabs=[['umum','Umum'],['paslon','Paslon'],['siswa','Data siswa'],['akun','Akun bilik'],['kontrol','Kontrol']].map(([k,l])=>`<button class="ab ${atab===k?'on':''}" data-at="${k}">${l}</button>`).join('');
+  const tabs=[['umum','Umum'],['paslon','Paslon'],['siswa','Data siswa'],['rekap','Rekap'],['akun','Akun bilik'],['kontrol','Kontrol']].map(([k,l])=>`<button class="ab ${atab===k?'on':''}" data-at="${k}">${l}</button>`).join('');
   const photo=(f,i,l)=>`<label class="up"><input type="file" accept="image/*" data-up="${f}" data-i="${i}" hidden>${C[i][f]?`<img src="${esc(C[i][f])}" alt="">`:'<span class="pl">+</span>'}<small>Foto ${l} · ${C[i][f]?'ganti':'unggah'}</small></label>`;
   const link=(l,u)=>`<label class="fl">${l}</label><div class="lk"><input readonly value="${esc(u)}"><button class="sec sm" data-copy="${esc(u)}">Salin</button></div>`;
   let body='';
@@ -456,7 +566,7 @@ function renderAdmin(app){
     <label class="fl">Foto</label><div class="ups">${photo('photoK',i,'ketua')}${photo('photoW',i,'wakil')}</div>
     <label class="fl">Visi</label><textarea rows="3" data-f="visi" data-i="${i}">${esc(k.visi||'')}</textarea>
     <label class="fl">Misi <span class="sub">(satu poin per baris)</span></label><textarea rows="5" data-f="misi" data-i="${i}">${esc(k.misi||'')}</textarea></div>`).join('')+'<button class="sec add" id="add">+ Tambah paslon</button>';
-  if(atab==='siswa')body=`<div class="card"><h2>Data siswa</h2><p class="sub" style="margin:0 0 8px">Satu siswa per baris dengan format <code>NIS,Nama,Kelas</code>. Bisa impor CSV atau tempel dari Excel.</p>
+  if(atab==='siswa')body=siswaCheck()+`<div class="card"><h2>Impor data siswa</h2><p class="sub" style="margin:0 0 8px">Satu siswa per baris dengan format <code>NIS,Nama,Kelas</code>. Bisa impor CSV atau tempel dari Excel.</p>
     <label class="btn">Impor file CSV<input type="file" id="csv" accept=".csv,.txt" hidden></label>
     <textarea id="vt" rows="8" placeholder="NIS,Nama,Kelas&#10;12345,Andi Pratama,XI RPL 1" style="margin-top:10px"></textarea>
     <div class="row" style="margin-top:10px"><button id="imp">Simpan data siswa</button><span class="sub">Tersimpan: ${tot} siswa</span></div></div>`;
@@ -464,6 +574,7 @@ function renderAdmin(app){
     <div class="card"><h2>Pemilihan guru</h2><p class="sub" style="margin:0 0 10px">Guru memilih dari HP masing-masing lewat tautan di bawah. Satu perangkat satu suara. Saat ini: <b style="color:${cfg.guruOpen!==false?'var(--ok)':'var(--bad)'}">${cfg.guruOpen!==false?'DIBUKA':'DITUTUP'}</b></p><button id="togg" class="${cfg.guruOpen!==false?'sec':''}">${cfg.guruOpen!==false?'Tutup pemilihan guru':'Buka pemilihan guru'}</button></div>
     <div class="card"><h2>Tautan</h2>${link('Layar hitung (projector)',base)}${link('Bilik suara siswa (HP bilik)',base+'#bilik')}${link('Pemilihan guru (bagikan ke grup guru)',base+'#bilikguru')}</div>
     <div class="card dz"><h2>Zona berbahaya</h2><p class="sub" style="margin:0 0 10px">Menghapus semua suara dan status memilih. Lakukan setelah uji coba, sebelum hari pemilihan.</p><button class="dan" id="rst">Reset semua suara</button></div>`;
+  if(atab==='rekap')body=rekapBody();
   if(atab==='akun')body=`<div class="card"><h2>Buat akun bilik</h2><p class="sub" style="margin:0 0 4px">Akun ini dipakai untuk login di HP bilik siswa dan bilik guru. Email boleh berupa alamat karangan, misalnya <code>bilik1@osis.sch</code>.</p>
     <label class="fl">Nama bilik</label><input id="bn" value="${esc(bform.n)}" placeholder="Contoh: Bilik 1">
     <label class="fl">Email</label><input id="be" type="email" autocapitalize="off" value="${esc(bform.e)}" placeholder="bilik1@osis.sch">
@@ -482,6 +593,7 @@ function renderAdmin(app){
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{read();flash=null;atab=b.dataset.at;renderAdmin(app)});
   app.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{try{navigator.clipboard.writeText(b.dataset.copy);b.textContent='Tersalin ✓'}catch(e){}});
   on('#out',()=>auth.signOut());
+  rekapBind(app);
   on('#bg',()=>{const c='abcdefghjkmnpqrstuvwxyz23456789';let p='';for(let i=0;i<10;i++)p+=c[Math.floor(Math.random()*c.length)];$('#bp').value=p;read()});
   on('#bc',()=>{read();const{n,e,p}=bform;if(!n.trim()||!e.trim()||p.length<6){flash={t:'er',m:'Isi nama, email, dan kata sandi (minimal 6 karakter).'};return renderAdmin(app)}
     run(async()=>{await makeBooth(n.trim(),e.trim(),p);bform={n:'',e:'',p:''}},'Akun bilik dibuat. Catat email dan kata sandinya.')});
@@ -494,9 +606,10 @@ function renderAdmin(app){
   on('#togg',()=>{cfg.guruOpen=(cfg.guruOpen===false);saveCfg(cfg.guruOpen===false?'Pemilihan guru ditutup.':'Pemilihan guru dibuka.')});
   on('#tog',()=>{cfg.open=!cfg.open;saveCfg(cfg.open?'Pemilihan dibuka.':'Pemilihan ditutup.')});
   const csv=$('#csv');if(csv)csv.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#vt').value=String(r.result).replace(/^\uFEFF/,'')};r.readAsText(f)};
-  on('#imp',()=>{const o={};let n=0;String($('#vt').value).replace(/\r/g,'').split('\n').forEach((l,i)=>{if(!l.trim())return;const p=l.split(/[,;\t]/);if(i===0&&/nis/i.test(p[0]))return;const id=slug(p[0]);if(!id)return;o[id]={n:(p[1]||'').trim(),k:(p[2]||'').trim()};n++});
-    if(!n){flash={t:'er',m:'Tidak ada data yang bisa dibaca.'};return renderAdmin(app)}
-    run(()=>db.ref().update({voters:o,'stats/total':n}),n+' siswa tersimpan.')});
+  on('#imp',()=>{const o={};let dup=0,bad=0;String($('#vt').value).replace(/\r/g,'').split('\n').forEach((l,i)=>{if(!l.trim())return;const p=l.split(/[,;\t]/);if(i===0&&/nis/i.test(p[0]))return;const id=slug(p[0]);if(!id||!(p[1]||'').trim()){bad++;return}if(o[id])dup++;o[id]={n:p[1].trim(),k:(p[2]||'').trim()}});
+    const n=Object.keys(o).length;if(!n){flash={t:'er',m:'Tidak ada data yang bisa dibaca.'};return renderAdmin(app)}
+    if(!confirm('Daftar siswa akan DIGANTI dengan '+n+' siswa dari data ini. Lanjutkan?'))return;
+    run(async()=>{await db.ref().update({voters:o,'stats/total':n});rk.v=null;rk.err=false},n+' siswa tersimpan'+(dup?', '+dup+' NIS ganda (data terakhir dipakai)':'')+(bad?', '+bad+' baris dilewati (NIS atau nama kosong)':'')+'.')});
   on('#rst',()=>{if(!confirm('Hapus SEMUA suara dan status memilih?'))return;run(()=>db.ref().update({tally:null,voted:null,guruVoted:null,'stats/voted':0,'stats/guru':0,'config/guruGen':Date.now()}),'Semua suara direset.')});
 }
 
