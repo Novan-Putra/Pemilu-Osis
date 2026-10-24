@@ -286,6 +286,9 @@ select{padding:11px 14px;border:1.5px solid var(--bd);border-radius:14px;backgro
 .shs .photos{margin:14px 0 8px}.shs .ph{width:36%;max-width:140px}
 .qrbig{margin-top:12px}.qrbig svg{width:170px;height:170px;border:1px solid var(--bd);border-radius:12px;display:block}
 .gc{flex-direction:row;align-items:center;gap:12px}.gq svg{width:96px;height:96px;display:block;flex:none}.gt{display:flex;flex-direction:column;gap:4px;min-width:0}
+body.kiosk{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}body.kiosk input{user-select:text;-webkit-user-select:text}
+#kz{position:fixed;top:0;left:50%;transform:translateX(-50%);width:96px;height:44px;z-index:60}
+#kmod{z-index:200}
 </style>
 </head>
 <body>
@@ -391,16 +394,52 @@ const ORN='<div class="orn" aria-hidden="true"><i class="o1"></i><i class="o2"><
 const CONT='<svg class="cont" viewBox="0 0 400 800" preserveAspectRatio="none" aria-hidden="true"><path d="M-20 120C80 40 200 160 300 90S420 40 440 100"/><path d="M-30 260C90 180 180 320 320 230S430 200 450 260"/><path d="M-20 560C100 480 200 640 330 540S430 520 450 600"/><path d="M-30 700C80 640 220 760 340 680"/></svg>';
 const BOX='<svg viewBox="0 0 200 200" width="190" height="190" aria-hidden="true"><circle cx="100" cy="100" r="92" fill="#ffe1e1"/><rect x="40" y="62" width="120" height="86" rx="6" fill="#fff" stroke="#ff5a5f" stroke-width="3"/><rect x="34" y="52" width="132" height="14" rx="4" fill="#ff5a5f"/><rect x="62" y="56" width="76" height="5" rx="2.5" fill="#fff"/><g font-family="Inter,sans-serif" font-weight="800" font-size="13" fill="#ff5a5f"><g transform="rotate(-12 80 98)"><rect x="62" y="80" width="40" height="30" rx="3" fill="#fff" stroke="#ff9a9a"/><text x="68" y="100">Vote</text></g><g transform="rotate(10 124 104)"><rect x="106" y="86" width="40" height="30" rx="3" fill="#fff" stroke="#ff9a9a"/><text x="112" y="106">Vote</text></g></g></svg>';
 let vmOpen=null,scr='home',verr=null,doneInfo=null,doneTm;
-let anonTry=false,gerr=null,cfm=false,submitting=false,online=true,idleTm;const VER='v2026.10.24-b',IDLE=90000;
+let anonTry=false,gerr=null,cfm=false,submitting=false,online=true,idleTm;const VER='v2026.10.24-c',IDLE=90000;
 const NETMSG='Tidak terhubung ke server. Tunggu hingga tersambung kembali, lalu coba lagi.';
 const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r({code:'TIMEOUT'}),ms))]);
 const errMsg=(e,why)=>e.code==='TIMEOUT'?'Suara belum terkonfirmasi (koneksi lambat). Ketik ulang NIS/kode: jika muncul "sudah memilih", suara sudah masuk; jika belum, kirim lagi.':e.code==='PERMISSION_DENIED'?'Suara ditolak: '+why+'.':'Gagal mengirim: '+e.message;
 function armIdle(){clearTimeout(idleTm);if(scr==='vote'&&!submitting&&(tab==='bilik'||tab==='bilikguru'||tab==='guru'))idleTm=setTimeout(()=>goHome(),IDLE)}
 ['click','touchstart','keydown','input'].forEach(ev=>document.addEventListener(ev,armIdle,true));
+let cfgSrv=null,pinFail=0,pinLock=0,xlP,wl=null;
+function cfgDiff(){const up={},a=cfg,b=cfgSrv||{};['title','school','logo','open'].forEach(k=>{if(a[k]!==b[k])up['config/'+k]=a[k]===undefined?null:a[k]});
+  const ca=a.candidates||[],cb=b.candidates||[];
+  if(ca.length!==cb.length)up['config/candidates']=ca;
+  else ca.forEach((k,i)=>['no','name','photoK','photoW','visi','misi'].forEach(f=>{if((k[f]||'')!==((cb[i]||{})[f]||''))up['config/candidates/'+i+'/'+f]=k[f]||''}));
+  return up}
+async function sha(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('osis:'+t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+const loadXlsx=()=>xlP||(xlP=new Promise((ok,no)=>{if(window.XLSX)return ok();const e=document.createElement('script');e.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';e.onload=ok;e.onerror=()=>{xlP=null;no(new Error('Pustaka Excel gagal dimuat. Periksa internet, atau simpan file sebagai CSV.'))};document.head.appendChild(e)}));
+const isX=f=>/\.xlsx?$/i.test(f.name);
+async function sheetRows(f){await loadXlsx();const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:false,blankrows:false})}
+async function xlStudents(f){const rows=await sheetRows(f),h=(rows[0]||[]).map(c=>String(c).toLowerCase()),hd=h.some(c=>/nis|nama|kelas/.test(c)),ix=(re,d)=>{const i=hd?h.findIndex(c=>re.test(c)):-1;return i>=0?i:d},iN=ix(/nis|induk/,0),iM=ix(/nama|name/,1),iK=ix(/kelas|class|rombel/,2);
+  return (hd?rows.slice(1):rows).map(r=>[r[iN],r[iM],r[iK]].map(x=>String(x==null?'':x).trim())).filter(r=>r[0]||r[1]).map(r=>r.join('\t'))}
+async function xlNames(f){const rows=await sheetRows(f),h=(rows[0]||[]).map(c=>String(c).toLowerCase()),i=h.findIndex(c=>/nama|guru|name/.test(c));return (i>=0?rows.slice(1):rows).map(r=>String(r[i>=0?i:0]==null?'':r[i>=0?i:0]).trim()).filter(Boolean)}
+async function tpl(kind){await loadXlsx();const rows=kind==='siswa'?[['NIS','Nama','Kelas'],['12345','Andi Pratama','XI RPL 1']]:[['Nama'],['Bu Sari, S.Pd.']],wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Data');XLSX.writeFile(wb,'template-'+kind+'.xlsx')}
+async function keepAwake(){try{if('wakeLock' in navigator&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}}catch(e){}}
+function modal(h){let m=$('#kmod');if(m)m.remove();m=document.createElement('div');m.id='kmod';m.className='sbg';m.innerHTML='<div class="shs">'+h+'</div>';document.body.appendChild(m);return m}
+function kioskMenu(){
+  if(!cfg.kioskPin){const m=modal('<h3>Menu petugas</h3><p class="sub">PIN belum diatur. Atur di Panel Panitia, tab Kontrol.</p><button id="kx">Tutup</button>');m.querySelector('#kx').onclick=()=>m.remove();return}
+  const m=modal('<h3>Menu petugas</h3><p class="sub">Masukkan PIN.</p><input id="kp" type="password" inputmode="numeric" autocomplete="off" maxlength="8"><div id="ke" class="msg er" style="display:none"></div><div class="row" style="margin-top:12px"><button class="sec" id="kx" style="flex:1">Batal</button><button id="ko" style="flex:1">Buka</button></div>');
+  const err=t=>{const e=m.querySelector('#ke');e.textContent=t;e.style.display='block'};
+  m.querySelector('#kx').onclick=()=>m.remove();
+  m.querySelector('#ko').onclick=async()=>{if(Date.now()<pinLock)return err('Terlalu banyak percobaan. Tunggu 30 detik.');
+    if(await sha(m.querySelector('#kp').value)===cfg.kioskPin){pinFail=0;m.querySelector('.shs').innerHTML='<h3>Menu petugas</h3><div class="row" style="flex-direction:column;align-items:stretch;gap:10px"><button id="a1">Layar penuh / keluar layar penuh</button><button id="a2" class="sec">Muat ulang halaman</button><button id="a3" class="sec">Keluar akun bilik</button><button id="a4" class="sec">Tutup menu</button></div>';
+      m.querySelector('#a1').onclick=()=>{toggleFs();m.remove()};m.querySelector('#a2').onclick=()=>location.reload();m.querySelector('#a3').onclick=()=>auth.signOut().then(()=>location.reload());m.querySelector('#a4').onclick=()=>m.remove()}
+    else{pinFail++;if(pinFail>=5){pinLock=Date.now()+30000;pinFail=0}err('PIN salah.')}};
+}
+function initKiosk(){
+  if(!kiosk)return;document.body.classList.add('kiosk');
+  document.addEventListener('contextmenu',e=>{if(!e.target.closest('input'))e.preventDefault()});
+  try{history.pushState({k:1},'');addEventListener('popstate',()=>history.pushState({k:1},''))}catch(e){}
+  let auto=false;document.addEventListener('click',()=>{if(auto)return;auto=true;if(!document.body.classList.contains('fsmode'))toggleFs()},true);
+  const z=document.createElement('div');z.id='kz';document.body.appendChild(z);let t;
+  z.addEventListener('pointerdown',()=>{clearTimeout(t);t=setTimeout(kioskMenu,3000)});['pointerup','pointerleave','pointercancel'].forEach(ev=>z.addEventListener(ev,()=>clearTimeout(t)));
+}
+function bootExtras(){initKiosk();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(tab==='layar'||kiosk))keepAwake()});setInterval(()=>{if(tab==='layar'||kiosk)keepAwake()},60000);keepAwake();
+  if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{})}
 function netBanner(){let b=$('#net');if(!b){b=document.createElement('div');b.id='net';document.body.appendChild(b)}b.className=online?'':'off';b.textContent=online?'':'Tidak terhubung ke server. Suara tidak dapat dikirim sampai tersambung kembali.'}
 function qrSvg(u){try{const q=qrcode(0,'M');q.addData(u);q.make();const n=q.getModuleCount();let d='';for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))d+='M'+(c+2)+' '+(r+2)+'h1v1h-1z';return `<svg viewBox="0 0 ${n+4} ${n+4}" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="100%" height="100%" fill="#fff"/><path d="${d}"/></svg>`}catch(e){return ''}}
 window.addEventListener('qrready',()=>{if(tab==='admin'&&atab==='guru'&&!typing())renderAdmin($('#app'))});
-async function backup(){const[a,b,c]=await Promise.all([db.ref('voted').get(),db.ref('guruVoted').get(),db.ref('tally').get()]);const t=c.val()||{},d={waktu:new Date().toISOString(),judul:cfg.title,paslon:cfg.candidates.map(k=>({no:k.no,nama:k.name,suara:t[slug(k.no)]||0})),suara_guru:stats.guru||0,siswa_memilih:Object.keys(a.val()||{}).length,voted:a.val()||{},guruVoted:b.val()||{}};const el=document.createElement('a');el.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,1)],{type:'application/json'}));el.download='cadangan-pemilihan-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json';el.click()}
+async function backup(full){const[a,b,c,vs,gs]=await Promise.all([db.ref('voted').get(),db.ref('guruVoted').get(),db.ref('tally').get(),full?db.ref('voters').get():null,full?db.ref('guru').get():null]);const t=c.val()||{},d={waktu:new Date().toISOString(),judul:cfg.title,paslon:cfg.candidates.map(k=>({no:k.no,nama:k.name,suara:t[slug(k.no)]||0})),suara_guru:stats.guru||0,...(full?{siswa:vs.val()||{},guru:gs.val()||{}}:{}),siswa_memilih:Object.keys(a.val()||{}).length,voted:a.val()||{},guruVoted:b.val()||{}};const el=document.createElement('a');el.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,1)],{type:'application/json'}));el.download='cadangan-pemilihan-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json';el.click()}
 const isG=()=>tab==='bilikguru'||tab==='guru',selfG=()=>tab==='guru'&&!(role==='admin'||role==='booth');
 function goHome(){clearTimeout(doneTm);clearTimeout(idleTm);cfm=false;vmOpen=null;scr='home';sel=null;voter=null;info=null;verr=null;anonTry=false;gerr=null;if(selfG()&&me&&me.isAnonymous){auth.signOut();return}render()}
 function guruSelf(app){
@@ -586,7 +625,7 @@ function guruBody(){
   <button id="gself" class="${on?'sec':''}">${on?'Tutup pemilihan mandiri':'Buka pemilihan mandiri'}</button>
   <label class="fl">Tautan pemilihan mandiri (bagikan ke guru)</label><div class="lk"><input readonly value="${esc(base+'#guru')}"><button class="sec sm" data-copy="${esc(base+'#guru')}">Salin</button></div>
   <div class="qrbig">${qr}</div><p class="sub" style="margin:8px 0 0;font-size:.85rem">Jalur mandiri butuh <b>Anonymous</b> aktif di Firebase (Authentication → Sign-in method).</p></div>
-  <div class="card"><h2>Tambah guru</h2><textarea id="gnm" rows="4" placeholder="Satu nama per baris, misalnya:&#10;Bu Sari, S.Pd.&#10;Pak Budi"></textarea><div class="row" style="margin-top:10px"><button id="gadd">Tambah dan buat kode</button></div></div>
+  <div class="card"><h2>Tambah guru</h2><div class="row" style="margin-bottom:10px"><label class="btn">Impor Excel / CSV<input type="file" id="gxl" accept=".xlsx,.xls,.csv,.txt" hidden></label><button class="sec sm" id="tpg" type="button">Unduh template Excel</button></div><div id="gxi" class="sub" style="margin-bottom:6px"></div><textarea id="gnm" rows="4" placeholder="Satu nama per baris, misalnya:&#10;Bu Sari, S.Pd.&#10;Pak Budi"></textarea><div class="row" style="margin-top:10px"><button id="gadd">Tambah dan buat kode</button></div></div>
   <div class="card"><h2>Daftar guru dan kode</h2><div class="row" style="margin:6px 0"><select id="gst">${[['all','Semua'],['belum','Belum memilih'],['sudah','Sudah memilih']].map(([k,l])=>`<option value="${k}" ${gf.st===k?'selected':''}>${l}</option>`).join('')}</select><button class="sec sm" id="grf">Muat ulang</button></div>
   <input id="gq" placeholder="Cari nama atau kode…" value="${esc(gf.q)}"><div id="glist">${glist()}</div>
   <div class="row" style="margin-top:12px"><button class="sec" id="gcsv">Unduh kode (CSV)</button><button class="sec" id="gcsv2">Guru belum memilih (CSV)</button><button id="gpr">Cetak kartu kode</button></div></div>
@@ -605,6 +644,9 @@ function guruBind(app){
   const q=$('#gq');if(q)q.oninput=()=>{gf.q=q.value;$('#glist').innerHTML=glist();guruBind(app)};
   on('#gcsv',()=>dl('kode-guru.csv',[['Nama','Kode']].concat(Object.entries(gk.g).map(([c,x])=>[x.n,c.toUpperCase()]).sort((a,b)=>a[0].localeCompare(b[0])))));
   on('#gcsv2',()=>dl('guru-belum-memilih.csv',[['Nama']].concat(Object.entries(gk.g).filter(([c])=>!gk.v[c]).map(([c,x])=>[x.n]))));
+  const gx=$('#gxl');if(gx)gx.onchange=async e=>{const f=e.target.files[0];if(!f)return;const xi=$('#gxi');xi.textContent='Membaca file…';
+    try{const n=isX(f)?await xlNames(f):String(await f.text()).replace(/^\uFEFF/,'').split('\n').map(x=>x.split(/[;\t]/)[0].trim()).filter(x=>x&&!/^nama$/i.test(x));$('#gnm').value=n.join('\n');xi.textContent=n.length+' nama dibaca. Periksa isinya, lalu klik Tambah dan buat kode.'}catch(x){xi.textContent=x.message}};
+  on('#tpg',()=>tpl('guru').catch(x=>alert(x.message)));
   on('#gpr',()=>{document.body.classList.add('pg');window.print();setTimeout(()=>document.body.classList.remove('pg'),800)});
 }
 let bi={},bform={n:'',e:'',p:''},biOn=false;
@@ -636,13 +678,14 @@ function renderAdmin(app){
     <label class="fl">Visi</label><textarea rows="3" data-f="visi" data-i="${i}">${esc(k.visi||'')}</textarea>
     <label class="fl">Misi <span class="sub">(satu poin per baris)</span></label><textarea rows="5" data-f="misi" data-i="${i}">${esc(k.misi||'')}</textarea></div>`).join('')+'<button class="sec add" id="add"'+(locked?' disabled':'')+'>+ Tambah paslon</button>';
   if(atab==='siswa')body=siswaCheck()+`<div class="card"><h2>Impor data siswa</h2><p class="sub" style="margin:0 0 8px">Satu siswa per baris dengan format <code>NIS,Nama,Kelas</code>. Bisa impor CSV atau tempel dari Excel.</p>
-    <label class="btn">Impor file CSV<input type="file" id="csv" accept=".csv,.txt" hidden></label>
-    <textarea id="vt" rows="8" placeholder="NIS,Nama,Kelas&#10;12345,Andi Pratama,XI RPL 1" style="margin-top:10px"></textarea>
+    <div class="row"><label class="btn">Impor Excel / CSV<input type="file" id="csv" accept=".xlsx,.xls,.csv,.txt" hidden></label><button class="sec sm" id="tps" type="button">Unduh template Excel</button></div>
+    <textarea id="vt" rows="8" placeholder="NIS,Nama,Kelas&#10;12345,Andi Pratama,XI RPL 1" style="margin-top:10px"></textarea><div id="xinfo" class="sub" style="margin-top:6px"></div>
     <div class="row" style="margin-top:10px"><button id="imp">Simpan data siswa</button><span class="sub">Tersimpan: ${tot} siswa</span></div></div>`;
   if(atab==='kontrol')body=`<div class="card"><h2>Status pemilihan</h2><p class="sub" style="margin:0 0 10px">Saat ini: <b style="color:${cfg.open?'var(--ok)':'var(--bad)'}">${cfg.open?'DIBUKA':'DITUTUP'}</b></p><button id="tog" class="${cfg.open?'sec':''}">${cfg.open?'Tutup pemilihan':'Buka pemilihan'}</button></div>
+    <div class="card"><h2>PIN petugas bilik</h2><p class="sub" style="margin:0 0 10px">Di HP bilik, <b>tekan dan tahan 3 detik di tengah tepi atas layar</b> untuk membuka menu petugas (layar penuh, muat ulang, keluar akun). Siswa tidak melihat tombolnya. Saat ini: <b>${cfg.kioskPin?'PIN aktif':'belum ada PIN'}</b>.</p><div class="lk"><input id="pin" inputmode="numeric" maxlength="8" placeholder="4-8 angka"><button id="pinset">Simpan PIN</button>${cfg.kioskPin?'<button class="sec" id="pinclr">Hapus</button>':''}</div></div>
     <div class="card"><h2>Tampilan layar hitung</h2><p class="sub" style="margin:0 0 10px">Hasil di projector saat ini: <b style="color:${cfg.hideLive===true?'var(--bad)':'var(--ok)'}">${cfg.hideLive===true?'DISEMBUNYIKAN sampai pemilihan ditutup':'DITAMPILKAN langsung'}</b>. Angka partisipasi tetap tampil. Catatan: pengguna teknis masih bisa membaca hitungan lewat database.</p><button id="thide" class="${cfg.hideLive===true?'':'sec'}">${cfg.hideLive===true?'Tampilkan hasil langsung':'Sembunyikan hasil sampai ditutup'}</button></div>
     <div class="card"><h2>Tautan</h2>${link('Layar hitung (projector)',base)}${link('Bilik suara siswa (HP bilik)',base+'#bilik')}${link('Bilik suara guru (HP bilik)',base+'#bilikguru')}${link('Pemilihan guru mandiri (bagikan ke guru)',base+'#guru')}</div>
-    <div class="card dz"><h2>Zona berbahaya</h2><p class="sub" style="margin:0 0 10px">Menghapus semua suara dan status memilih. Lakukan setelah uji coba, sebelum hari pemilihan.</p><button class="dan" id="rst">Reset semua suara</button></div>`;
+    <div class="card dz"><h2>Zona berbahaya</h2><p class="sub" style="margin:0 0 10px">Menghapus semua suara dan status memilih. Lakukan setelah uji coba, sebelum hari pemilihan.</p><button class="dan" id="rst">Reset semua suara</button><p class="sub" style="margin:14px 0 8px">Setelah hasil final diarsipkan, hapus data pribadi siswa dan guru dari Firebase.</p><button class="dan" id="wipe">Hapus semua data pribadi</button></div>`;
   if(atab==='guru')body=guruBody();
   if(atab==='rekap')body=rekapBody();
   if(atab==='akun')body=`<div class="card"><h2>Buat akun bilik</h2><p class="sub" style="margin:0 0 4px">Akun ini dipakai untuk login di HP bilik siswa dan bilik guru. Email boleh berupa alamat karangan, misalnya <code>bilik1@osis.sch</code>.</p>
@@ -658,7 +701,7 @@ function renderAdmin(app){
   const read=()=>{const t=$('#ttl');if(t)cfg.title=t.value;const sc=$('#sch');if(sc)cfg.school=sc.value;const gt=$('#gt');if(gt)cfg.guruTotal=parseInt(gt.value)||0;const bn=$('#bn');if(bn)bform={n:bn.value,e:$('#be').value,p:$('#bp').value};app.querySelectorAll('[data-f]').forEach(e=>{if(cfg.candidates[e.dataset.i])cfg.candidates[e.dataset.i][e.dataset.f]=e.value})};
   app.oninput=read;
   const run=async(fn,ok)=>{try{await fn();flash={t:'ok',m:ok}}catch(e){flash={t:'er',m:'Gagal: '+(e.message||e.code)}}renderAdmin(app)};
-  const saveCfg=m=>run(()=>db.ref('config').set(cfg),m);
+  const saveCfg=m=>run(async()=>{const up=cfgDiff();if(Object.keys(up).length)await db.ref().update(up)},m);
   const on=(id,fn)=>{const e=$(id);if(e)e.onclick=fn};
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{read();flash=null;atab=b.dataset.at;renderAdmin(app)});
   app.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{try{navigator.clipboard.writeText(b.dataset.copy);b.textContent='Tersalin ✓'}catch(e){}});
@@ -670,24 +713,33 @@ function renderAdmin(app){
   app.querySelectorAll('[data-rv]').forEach(b=>b.onclick=()=>{if(!confirm('Cabut akses akun ini? Akun tidak bisa lagi mengirim suara.'))return;run(()=>db.ref().update({['booths/'+b.dataset.rv]:null,['boothInfo/'+b.dataset.rv]:null}),'Akses dicabut.')});
   on('#add',()=>{read();cfg.candidates.push({no:String(cfg.candidates.length+1),name:'',photoK:'',photoW:'',visi:'',misi:''});renderAdmin(app)});
   app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(!confirm('Hapus paslon ini?'))return;read();cfg.candidates.splice(b.dataset.del,1);renderAdmin(app)});
-  app.querySelectorAll('[data-up]').forEach(e=>e.onchange=async()=>{const f=e.files[0];if(!f)return;read();cfg.candidates[e.dataset.i][e.dataset.up]=await shrink(f,520,'image/jpeg');saveCfg('Foto diunggah.')});
+  app.querySelectorAll('[data-up]').forEach(e=>e.onchange=async()=>{const f=e.files[0];if(!f)return;read();cfg.candidates[e.dataset.i][e.dataset.up]=await shrink(f,720,'image/jpeg');saveCfg('Foto diunggah.')});
   const lg=$('#lg');if(lg)lg.onchange=async e=>{const f=e.target.files[0];if(!f)return;read();cfg.logo=await shrink(f,256,'image/png');saveCfg('Logo diunggah.')};
   on('#save',()=>{read();saveCfg('Perubahan tersimpan.')});
   on('#thide',async()=>{const nx=cfg.hideLive!==true;try{await db.ref('config/hideLive').set(nx);flash={t:'ok',m:nx?'Hasil disembunyikan sampai pemilihan ditutup.':'Hasil ditampilkan langsung.'}}catch(e){flash={t:'er',m:'Gagal: '+e.message}}renderAdmin(app)});
   on('#tog',()=>{cfg.open=!cfg.open;saveCfg(cfg.open?'Pemilihan dibuka.':'Pemilihan ditutup.')});
-  const csv=$('#csv');if(csv)csv.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#vt').value=String(r.result).replace(/^\uFEFF/,'')};r.readAsText(f)};
+  const csv=$('#csv');if(csv)csv.onchange=async e=>{const f=e.target.files[0];if(!f)return;const xi=$('#xinfo');xi.textContent='Membaca file…';
+    try{if(isX(f)){const l=await xlStudents(f);$('#vt').value=l.join('\n');xi.textContent=l.length+' baris dibaca dari Excel. Periksa isinya, lalu klik Simpan data siswa.'}
+    else{const t=String(await f.text()).replace(/^\uFEFF/,'');$('#vt').value=t;xi.textContent=t.split('\n').filter(x=>x.trim()).length+' baris dibaca. Periksa isinya, lalu klik Simpan data siswa.'}}catch(x){xi.textContent=x.message}};
+  on('#tps',()=>tpl('siswa').catch(x=>alert(x.message)));
   on('#imp',()=>{const o={};let dup=0,bad=0;String($('#vt').value).replace(/\r/g,'').split('\n').forEach((l,i)=>{if(!l.trim())return;const p=l.split(/[,;\t]/);if(i===0&&/nis/i.test(p[0]))return;const id=slug(p[0]);if(!id||!(p[1]||'').trim()){bad++;return}if(o[id])dup++;o[id]={n:p[1].trim(),k:(p[2]||'').trim()}});
     const n=Object.keys(o).length;if(!n){flash={t:'er',m:'Tidak ada data yang bisa dibaca.'};return renderAdmin(app)}
     if(!confirm('Daftar siswa akan DIGANTI dengan '+n+' siswa dari data ini. Lanjutkan?'))return;
     run(async()=>{await db.ref().update({voters:o,'stats/total':n});rk.v=null;rk.err=false},n+' siswa tersimpan'+(dup?', '+dup+' NIS ganda (data terakhir dipakai)':'')+(bad?', '+bad+' baris dilewati (NIS atau nama kosong)':'')+'.')});
+  on('#wipe',()=>{const w=prompt('Menghapus SELURUH data siswa, guru, dan suara dari Firebase.\nCadangan lengkap diunduh otomatis lebih dulu.\n\nKetik HAPUS DATA untuk melanjutkan:');if(w!=='HAPUS DATA')return;
+    run(async()=>{await backup(true);await db.ref().update({tally:null,voted:null,guruVoted:null,guruUid:null,voters:null,guru:null,'stats/voted':0,'stats/guru':0,'stats/total':0,'config/guruTotal':0});rk.v=null;rk.err=false;gk.g=null;gk.err=false},'Data dihapus. Cadangan lengkap sudah diunduh.')});
+  on('#pinset',async()=>{const p=($('#pin').value||'').trim();if(!/^\d{4,8}$/.test(p)){flash={t:'er',m:'PIN harus 4 sampai 8 angka.'};return renderAdmin(app)}
+    run(async()=>{await db.ref('config/kioskPin').set(await sha(p))},'PIN petugas bilik disimpan.')});
+  on('#pinclr',()=>run(()=>db.ref('config/kioskPin').set(null),'PIN dihapus.'));
   on('#rst',()=>{const w=prompt('Tindakan ini menghapus SEMUA suara dan status memilih.\nCadangan hasil akan diunduh otomatis lebih dulu.\n\nKetik RESET untuk melanjutkan:');if(w!=='RESET')return;
     run(async()=>{await backup();await db.ref().update({tally:null,voted:null,guruVoted:null,guruUid:null,'stats/voted':0,'stats/guru':0});rk.v=null;rk.err=false;gk.g=null;gk.err=false},'Semua suara direset. Cadangan sudah diunduh.')});
 }
 
+bootExtras();
 if(typeof firebase==='undefined'){$('#app').innerHTML='<main><div class="card"><b>Tidak dapat terhubung ke layanan Firebase.</b><p class="sub">Periksa koneksi internet, lalu muat ulang halaman.</p></div></main>'}else if(!FB.apiKey.startsWith('ISI')){
   firebase.initializeApp(FB);db=firebase.database();auth=firebase.auth();
   let cn;db.ref('.info/connected').on('value',x=>{clearTimeout(cn);if(x.val()===true){online=true;netBanner()}else cn=setTimeout(()=>{online=false;netBanner()},4000)});
-  db.ref('config').on('value',s=>{const d=s.val()||{};cfg={...cfg,...d,logo:d.logo||'',candidates:d.candidates?Object.values(d.candidates):[],open:d.open!==false};if(!typing())render()});
+  db.ref('config').on('value',s=>{const d=s.val()||{};cfg={...cfg,...d,logo:d.logo||'',candidates:d.candidates?Object.values(d.candidates):[],open:d.open!==false};cfgSrv=JSON.parse(JSON.stringify(cfg));if(!typing())render()});
   db.ref('tally').on('value',s=>{tally=s.val()||{};if(tab==='layar')render()});
   db.ref('stats').on('value',s=>{stats={total:0,voted:0,...(s.val()||{})};if(tab==='layar'||(tab==='admin'&&!typing()))render()});
   auth.onAuthStateChanged(async u=>{me=u;role=null;
