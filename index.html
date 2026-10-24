@@ -84,7 +84,7 @@ button:disabled{background:#ece6e2;color:#a69d96;box-shadow:none;cursor:default}
 @keyframes rec{50%{opacity:0}}
 .clk{font-weight:800;font-variant-numeric:tabular-nums;color:var(--mut)}
 .cols{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2vw;margin:2.5vh 0}
-.cols .col:nth-child(1){--cf:var(--g)}
+.cols .cell:nth-child(1) .col{--cf:var(--g)}
 .col{background:#fff;border-radius:32px;padding:2.5vh 1.5vw;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2vh;border:2px solid var(--bd);box-shadow:var(--sh);position:relative;overflow:hidden}
 .col.lead{border-color:var(--acc);box-shadow:0 14px 50px rgba(255,90,60,.28)}
 .col .big{position:absolute;left:50%;top:-4vh;transform:translateX(-50%);font-weight:800;line-height:1;color:transparent;-webkit-text-stroke:3px rgba(255,90,60,.14);pointer-events:none}
@@ -116,18 +116,6 @@ body.fsmode .live{height:100vh;height:100dvh;overflow:hidden}
 /* susunan calon: foto di kiri, informasi di kanan */
 .inf{display:flex;flex-direction:column;align-items:center;text-align:center;gap:1vh;min-width:0}
 .col .inf .bar{width:100%}
-@media (min-aspect-ratio:1/1){
- .live .cols{align-content:center;align-items:center}
- .live .col{flex-direction:row;justify-content:flex-start;gap:1.6vw;padding:2.5vh 1.6vw}
- .live .ph{height:min(46vh,17vw)}
- .live .photos{flex:none}
- .live .inf{flex:1;align-items:flex-start;text-align:left}
- .live .nm{font-size:min(1.55vw,2.7vh);text-align:left}
- .live .pct{font-size:min(6.5vw,11vh)}
- .live .cn{font-size:min(1.5vw,2.6vh)}
- .live .badge{font-size:min(1.05vw,2vh)}
- .live .big{left:auto;right:1vw;transform:none;top:-3vh;font-size:min(22vw,42vh)}
-}
 /* header layar & warna persen */
 .hd h1{text-align:left;flex:1;min-width:0;line-height:1.15}
 .hl{flex:1;min-width:0}
@@ -223,6 +211,30 @@ input[type=file]{font-size:.85rem;max-width:100%}
  body.fsmode .live{height:auto;min-height:100dvh;overflow:visible}
  .live .cols{flex:0 0 auto}
 }
+/* tata letak cerdas: menyesuaikan lebar kartu (container query) */
+.cell{container-type:inline-size;display:flex;min-width:0}
+.cell>.col{flex:1;min-width:0}
+.live{--k:1}.live.t1{--k:.82}.live.t2{--k:.66}
+.live .col{--ph:min(36vh,60cqw);gap:calc(1vh*var(--k));align-items:center;justify-content:center}
+.live .col .ph{height:calc(var(--ph)*var(--k));width:auto;aspect-ratio:3/4;max-width:48%}
+.live .col .inf{width:100%;align-items:center;text-align:center}
+.live .col .inf .bar{width:84%}
+.live .col .nm{font-size:calc(min(3.8cqw,3vh)*var(--k));text-align:center}
+.live .col .pct{font-size:calc(min(15cqw,9.5vh)*var(--k))}
+.live .col .cn{font-size:calc(min(3.6cqw,2.6vh)*var(--k))}
+.live .col .badge,.live .col .tag{font-size:calc(min(3cqw,2.2vh)*var(--k))}
+.live .col .big{left:50%;right:auto;transform:translateX(-50%);top:-3vh;font-size:min(60cqw,42vh)}
+@container (min-width:640px){
+ .live .cols:not(.many) .col{--ph:min(46vh,32cqw);flex-direction:row;justify-content:flex-start;gap:3cqw;padding:2.5vh 3cqw}
+ .live .cols:not(.many) .col .ph{max-width:none}
+ .live .cols:not(.many) .col .inf{flex:1;width:auto;align-items:flex-start;text-align:left}
+ .live .cols:not(.many) .col .inf .bar{width:100%}
+ .live .cols:not(.many) .col .nm{text-align:left;font-size:calc(min(3.2cqw,2.8vh)*var(--k))}
+ .live .cols:not(.many) .col .pct{font-size:calc(min(14cqw,11vh)*var(--k))}
+ .live .cols:not(.many) .col .cn{font-size:calc(min(2.8cqw,2.6vh)*var(--k))}
+ .live .cols:not(.many) .col .badge{font-size:calc(min(2.4cqw,2vh)*var(--k))}
+ .live .cols:not(.many) .col .big{left:auto;right:2cqw;transform:none;font-size:min(36cqw,42vh)}
+}
 </style>
 </head>
 <body>
@@ -292,15 +304,22 @@ function renderLive(app){
   const tot=Object.values(tally).reduce((a,b)=>a+b,0),mx=Math.max(0,...cfg.candidates.map(k=>tally[slug(k.no)]||0));
   const lead=cfg.candidates.filter(k=>(tally[slug(k.no)]||0)===mx&&mx>0).length===1;
   const cols=cfg.candidates.map((k,i)=>{const n=tally[slug(k.no)]||0,p=tot?Math.round(n/tot*100):0,ld=lead&&n===mx;
-    return `<div class="col ${ld?'lead':''}" style="--cc:var(--c${i%2+1})"><span class="big">${esc(k.no)}</span>${ld?'<span class="tag">Unggul</span>':''}${photos(k)}<div class="inf"><span class="badge">Nomor urut ${esc(k.no)}</span><div class="nm">${esc(k.name)}</div>
-    <div class="pct">${p}%</div><div class="bar"><i style="width:${p}%"></i></div><div class="cn">${n} suara</div></div></div>`}).join('');
+    return `<div class="cell"><div class="col ${ld?'lead':''}" style="--cc:var(--c${i%2+1})"><span class="big">${esc(k.no)}</span>${ld?'<span class="tag">Unggul</span>':''}${photos(k)}<div class="inf"><span class="badge">Nomor urut ${esc(k.no)}</span><div class="nm">${esc(k.name)}</div>
+    <div class="pct">${p}%</div><div class="bar"><i style="width:${p}%"></i></div><div class="cn">${n} suara</div></div></div></div>`}).join('');
   const dpt=stats.total||0,v=stats.voted||0;
   app.innerHTML=`<div class="live"><div class="hd"><div class="hl">${logo()}<h1>${esc(cfg.title)}</h1></div><div class="hr"><span class="lv">LIVE COUNTING</span><span class="clk" id="clk"></span></div></div>
-  <div class="cols" style="--n:${cfg.candidates.length||1}">${cols||'<div class="col">Belum ada paslon. Atur di Panel Panitia.</div>'}</div>
+  <div class="cols${cfg.candidates.length>2?' many':''}" style="--n:${Math.min(cfg.candidates.length||1,4)}">${cols||'<div class="col">Belum ada paslon. Atur di Panel Panitia.</div>'}</div>
   <div class="stats"><div><b>${dpt||'–'}</b><span>Total pemilih</span></div><div><b>${dpt?Math.max(0,dpt-v):'–'}</b><span>Belum memilih</span></div><div><b>${v}</b><span>Sudah memilih</span></div><div><b>${dpt?(v/dpt*100).toFixed(1)+'%':'–'}</b><span>Partisipasi</span></div></div>
   <div style="text-align:center"><span class="pill ${cfg.open?'':'off'}">${cfg.open?'Pemilihan masih aktif':'Pemilihan ditutup'}${(stats.guru||cfg.guruTotal)?' · Suara guru: '+(stats.guru||0)+(cfg.guruTotal?' / '+cfg.guruTotal:''):''}</span></div></div>`;
-  tick();
+  tick();fitLive();
 }
+let rz;
+function fitLive(){const L=$('.live');if(!L)return;L.classList.remove('t1','t2');
+  const bad=()=>[...L.querySelectorAll('.col')].some(c=>{const r=c.getBoundingClientRect(),k=[...c.children].filter(x=>!/big|tag/.test(x.className));if(!k.length)return false;
+    const q=k.map(x=>x.getBoundingClientRect());return Math.min(...q.map(x=>x.top))<r.top-1||Math.max(...q.map(x=>x.bottom))>r.bottom+1||Math.max(...q.map(x=>x.right))>r.right+1||Math.min(...q.map(x=>x.left))<r.left-1});
+  for(const c of['t1','t2']){if(!bad())break;L.classList.add(c)}}
+window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(fitLive,150)});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitLive);
 function tick(){const e=$('#clk');if(e)e.textContent=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(/\./g,':')}
 setInterval(tick,1000);
 
