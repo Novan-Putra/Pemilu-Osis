@@ -264,6 +264,8 @@ input[type=file]{font-size:.85rem;max-width:100%}
 .live .col.lead{border-color:var(--acc);box-shadow:0 0 0 4px rgba(255,90,60,.12),0 18px 60px rgba(255,90,60,.35)}
 .live .stats{background:linear-gradient(135deg,#fff 0%,#fff1e8 100%);border:2px solid rgba(255,140,90,.26);box-shadow:0 10px 30px rgba(255,90,60,.12)}
 .live .col .bar i{box-shadow:0 0 12px rgba(255,90,60,.35)}
+.acc{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--bd)}
+.acc .grow{flex:1;min-width:0;overflow-wrap:anywhere}.acc b{display:block}.acc small{color:var(--mut)}
 </style>
 </head>
 <body>
@@ -412,11 +414,23 @@ async function submit(){
   try{await db.ref().update(up);doneInfo={n:info.n,k:info.k};sel=null;voter=null;info=null;verr=null;scr='done';render();doneTm=setTimeout(goHome,9000)}
   catch(e){verr=e.code==='PERMISSION_DENIED'?'Suara ditolak: NIS sudah dipakai atau akses tidak sah.':'Gagal mengirim: '+e.message;bVote(app)}
 }
+let bi={},bform={n:'',e:'',p:''},biOn=false;
+async function makeBooth(name,email,pw){
+  const ap=firebase.apps.find(a=>a.name==='sec')||firebase.initializeApp(FB,'sec'),a2=ap.auth();let uid;
+  try{uid=(await a2.createUserWithEmailAndPassword(email,pw)).user.uid}
+  catch(e){
+    if(e.code==='auth/email-already-in-use'){try{uid=(await a2.signInWithEmailAndPassword(email,pw)).user.uid}catch(x){throw new Error('Email sudah terdaftar dengan kata sandi lain.')}}
+    else if(e.code==='auth/weak-password')throw new Error('Kata sandi terlalu lemah (minimal 6 karakter).');
+    else if(e.code==='auth/invalid-email')throw new Error('Format email tidak valid.');
+    else throw e}
+  await a2.signOut();
+  await db.ref().update({['booths/'+uid]:true,['boothInfo/'+uid]:{name,email,ts:firebase.database.ServerValue.TIMESTAMP}});
+}
 let atab='umum';
 function renderAdmin(app){
   const C=cfg.candidates,tot=stats.total||0,v=stats.voted||0,base=location.href.split('#')[0];
   const tile=(l,x)=>`<div class="at"><b>${x}</b><span>${l}</span></div>`;
-  const tabs=[['umum','Umum'],['paslon','Paslon'],['siswa','Data siswa'],['kontrol','Kontrol']].map(([k,l])=>`<button class="ab ${atab===k?'on':''}" data-at="${k}">${l}</button>`).join('');
+  const tabs=[['umum','Umum'],['paslon','Paslon'],['siswa','Data siswa'],['akun','Akun bilik'],['kontrol','Kontrol']].map(([k,l])=>`<button class="ab ${atab===k?'on':''}" data-at="${k}">${l}</button>`).join('');
   const photo=(f,i,l)=>`<label class="up"><input type="file" accept="image/*" data-up="${f}" data-i="${i}" hidden>${C[i][f]?`<img src="${esc(C[i][f])}" alt="">`:'<span class="pl">+</span>'}<small>Foto ${l} · ${C[i][f]?'ganti':'unggah'}</small></label>`;
   const link=(l,u)=>`<label class="fl">${l}</label><div class="lk"><input readonly value="${esc(u)}"><button class="sec sm" data-copy="${esc(u)}">Salin</button></div>`;
   let body='';
@@ -433,11 +447,17 @@ function renderAdmin(app){
   if(atab==='kontrol')body=`<div class="card"><h2>Status pemilihan</h2><p class="sub" style="margin:0 0 10px">Saat ini: <b style="color:${cfg.open?'var(--ok)':'var(--bad)'}">${cfg.open?'DIBUKA':'DITUTUP'}</b></p><button id="tog" class="${cfg.open?'sec':''}">${cfg.open?'Tutup pemilihan':'Buka pemilihan'}</button></div>
     <div class="card"><h2>Tautan</h2>${link('Layar hitung (projector)',base)}${link('Bilik suara siswa (HP bilik)',base+'#bilik')}${link('Bilik suara guru',base+'#bilikguru')}</div>
     <div class="card dz"><h2>Zona berbahaya</h2><p class="sub" style="margin:0 0 10px">Menghapus semua suara dan status memilih. Lakukan setelah uji coba, sebelum hari pemilihan.</p><button class="dan" id="rst">Reset semua suara</button></div>`;
+  if(atab==='akun')body=`<div class="card"><h2>Buat akun bilik</h2><p class="sub" style="margin:0 0 4px">Akun ini dipakai untuk login di HP bilik siswa dan bilik guru. Email boleh berupa alamat karangan, misalnya <code>bilik1@osis.sch</code>.</p>
+    <label class="fl">Nama bilik</label><input id="bn" value="${esc(bform.n)}" placeholder="Contoh: Bilik 1">
+    <label class="fl">Email</label><input id="be" type="email" autocapitalize="off" value="${esc(bform.e)}" placeholder="bilik1@osis.sch">
+    <label class="fl">Kata sandi (minimal 6 karakter)</label><div class="lk"><input id="bp" autocomplete="off" value="${esc(bform.p)}"><button class="sec sm" id="bg" type="button">Acak</button></div>
+    <div class="row" style="margin-top:14px"><button id="bc">Buat akun</button></div></div>
+    <div class="card"><h2>Akun bilik terdaftar</h2>${Object.entries(bi).sort((a,b)=>(a[1].ts||0)-(b[1].ts||0)).map(([u,x])=>`<div class="acc"><div class="grow"><b>${esc(x.name)}</b><small>${esc(x.email)}</small></div><button class="dan sm" data-rv="${esc(u)}">Cabut akses</button></div>`).join('')||'<p class="sub" style="margin:8px 0 0">Belum ada akun yang dibuat dari panel ini.</p>'}</div>`;
   app.innerHTML=`<div class="adm"><div class="ah"><div><h1>Panel Panitia</h1><div class="sub">${esc(cfg.school)}</div></div><button class="sec sm" id="out">Keluar</button></div>
   <div class="atl">${tile('Siswa',tot)}${tile('Sudah memilih',v)}${tile('Belum memilih',Math.max(0,tot-v))}${tile('Total suara',Object.values(tally).reduce((a,b)=>a+b,0))}</div>
   <div class="atabs">${tabs}</div>${flash?`<div class="msg ${flash.t}" style="margin:0 0 12px">${esc(flash.m)}</div>`:''}${body}
   ${(atab==='umum'||atab==='paslon')?'<div class="sbar"><button id="save">Simpan perubahan</button></div>':''}</div>`;
-  const read=()=>{const t=$('#ttl');if(t)cfg.title=t.value;const sc=$('#sch');if(sc)cfg.school=sc.value;const gt=$('#gt');if(gt)cfg.guruTotal=parseInt(gt.value)||0;app.querySelectorAll('[data-f]').forEach(e=>{if(cfg.candidates[e.dataset.i])cfg.candidates[e.dataset.i][e.dataset.f]=e.value})};
+  const read=()=>{const t=$('#ttl');if(t)cfg.title=t.value;const sc=$('#sch');if(sc)cfg.school=sc.value;const gt=$('#gt');if(gt)cfg.guruTotal=parseInt(gt.value)||0;const bn=$('#bn');if(bn)bform={n:bn.value,e:$('#be').value,p:$('#bp').value};app.querySelectorAll('[data-f]').forEach(e=>{if(cfg.candidates[e.dataset.i])cfg.candidates[e.dataset.i][e.dataset.f]=e.value})};
   app.oninput=read;
   const run=async(fn,ok)=>{try{await fn();flash={t:'ok',m:ok}}catch(e){flash={t:'er',m:'Gagal: '+(e.message||e.code)}}renderAdmin(app)};
   const saveCfg=m=>run(()=>db.ref('config').set(cfg),m);
@@ -445,6 +465,10 @@ function renderAdmin(app){
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{read();flash=null;atab=b.dataset.at;renderAdmin(app)});
   app.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{try{navigator.clipboard.writeText(b.dataset.copy);b.textContent='Tersalin ✓'}catch(e){}});
   on('#out',()=>auth.signOut());
+  on('#bg',()=>{const c='abcdefghjkmnpqrstuvwxyz23456789';let p='';for(let i=0;i<10;i++)p+=c[Math.floor(Math.random()*c.length)];$('#bp').value=p;read()});
+  on('#bc',()=>{read();const{n,e,p}=bform;if(!n.trim()||!e.trim()||p.length<6){flash={t:'er',m:'Isi nama, email, dan kata sandi (minimal 6 karakter).'};return renderAdmin(app)}
+    run(async()=>{await makeBooth(n.trim(),e.trim(),p);bform={n:'',e:'',p:''}},'Akun bilik dibuat. Catat email dan kata sandinya.')});
+  app.querySelectorAll('[data-rv]').forEach(b=>b.onclick=()=>{if(!confirm('Cabut akses akun ini? Akun tidak bisa lagi mengirim suara.'))return;run(()=>db.ref().update({['booths/'+b.dataset.rv]:null,['boothInfo/'+b.dataset.rv]:null}),'Akses dicabut.')});
   on('#add',()=>{read();cfg.candidates.push({no:String(cfg.candidates.length+1),name:'',photoK:'',photoW:'',visi:'',misi:''});renderAdmin(app)});
   app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(!confirm('Hapus paslon ini?'))return;read();cfg.candidates.splice(b.dataset.del,1);renderAdmin(app)});
   app.querySelectorAll('[data-up]').forEach(e=>e.onchange=async()=>{const f=e.files[0];if(!f)return;read();cfg.candidates[e.dataset.i][e.dataset.up]=await shrink(f,520,'image/jpeg');saveCfg('Foto diunggah.')});
@@ -465,6 +489,7 @@ if(!FB.apiKey.startsWith('ISI')){
   db.ref('stats').on('value',s=>{stats={total:0,voted:0,...(s.val()||{})};if(tab==='layar'||(tab==='admin'&&!typing()))render()});
   auth.onAuthStateChanged(async u=>{me=u;role=null;
     if(u){try{const[a,b]=await Promise.all([db.ref('admins/'+u.uid).get(),db.ref('booths/'+u.uid).get()]);role=a.val()===true?'admin':b.val()===true?'booth':'none'}catch(e){role='none'}}
+    if(role==='admin'&&!biOn){biOn=true;db.ref('boothInfo').on('value',x=>{bi=x.val()||{};if(tab==='admin'&&atab==='akun'&&!typing())render()},()=>{})}
     ready=true;render()});
 }else render();
 </script>
