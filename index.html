@@ -335,7 +335,7 @@ function renderLive(app){
   const tot=Object.values(tally).reduce((a,b)=>a+b,0),mx=Math.max(0,...cfg.candidates.map(k=>tally[slug(k.no)]||0));
   const lead=cfg.candidates.filter(k=>(tally[slug(k.no)]||0)===mx&&mx>0).length===1;
   const cols=cfg.candidates.map((k,i)=>{const n=tally[slug(k.no)]||0,p=tot?Math.round(n/tot*100):0,ld=lead&&n===mx;
-    return `<div class="cell"><div class="col ${ld?'lead':''}" style="--cc:var(--c${i%2+1})"><span class="big">${esc(k.no)}</span>${ld?'<span class="tag">Unggul</span>':''}${photos(k)}<div class="inf"><span class="badge">Nomor urut ${esc(k.no)}</span><div class="nm">${esc(k.name)}</div>
+    return `<div class="cell"><div class="col ${ld?'lead':''}" style="--cc:var(--c${i%2+1})"><span class="big">${esc(k.no)}</span>${ld?'<span class="tag">Unggul</span>':''}${photos(k)}<div class="inf"><span class="badge">Nomor Urut ${esc(k.no)}</span><div class="nm">${esc(k.name)}</div>
     <div class="pct">${p}%</div><div class="bar"><i style="width:${p}%"></i></div><div class="cn">${n} suara</div></div></div></div>`}).join('');
   const dpt=stats.total||0,v=stats.voted||0;
   app.innerHTML=`<div class="live">${ORN}<div class="hd"><div class="hl">${logo()}<h1>${esc(cfg.title)}</h1></div><div class="hr"><span class="lv">LIVE COUNTING</span><span class="clk" id="clk"></span></div></div>
@@ -370,7 +370,7 @@ function goHome(){clearTimeout(doneTm);vmOpen=null;scr='home';sel=null;voter=nul
 function renderBilik(app){scr==='home'?bHome(app):scr==='done'?bDone(app):bVote(app)}
 function bHome(app){
   app.innerHTML=`<div class="home">${CONT}${FSB()}<div class="hm">${logo()}<h1>${esc(cfg.title)}</h1>${tab==='bilikguru'?'<span class="gchip">Bilik Suara Guru</span>':''}</div>
-  <div class="hb"><p class="tg">Gunakan hak pilihmu dengan mudah!</p>${cfg.open?'<button class="pill-w" id="go">Mulai memilih</button>':'<div class="closed">Pemilihan sedang ditutup</div>'}<div class="sch">${esc(cfg.school)}</div></div></div>`;
+  <div class="hb"><p class="tg">Gunakan hak pilihmu dengan Bijak!</p>${cfg.open?'<button class="pill-w" id="go">Mulai memilih</button>':'<div class="closed">Pemilihan sedang ditutup</div>'}<div class="sch">${esc(cfg.school)}</div></div></div>`;
   const g=$('#go');if(g)g.onclick=()=>{scr='vote';render()};
 }
 function bVote(app){
