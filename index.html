@@ -278,6 +278,9 @@ select{padding:11px 14px;border:1.5px solid var(--bd);border-radius:14px;backgro
 .chip{padding:4px 12px;border-radius:99px;font-weight:800;font-size:.8rem}.chip.y{background:#e8f6ed;color:var(--ok)}.chip.n{background:#f3efec;color:var(--mut)}
 .rep h1{margin:0}
 @media print{nav,.ah,.atabs,.rsubs,.sbar,.fsb,.noprint{display:none!important}.adm{padding:0;max-width:none}.card,.msg,.atl{break-inside:avoid;box-shadow:none}body{background:#fff}}
+.gcards{display:none}
+.gc{border:2px dashed #999;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;break-inside:avoid;font-size:.85rem}.gc b{font-size:1.05rem}.gc strong{font-size:1.25rem;letter-spacing:.12em}
+@media print{body.pg .adm>*:not(.gcards){display:none!important}body.pg .gcards{display:grid;grid-template-columns:1fr 1fr;gap:10px}}
 </style>
 </head>
 <body>
@@ -296,7 +299,7 @@ const FB={apiKey:"AIzaSyDjlQYqbbE_gZMI9NtODM57Q0BQRXP5-d0",authDomain:"pemilu-os
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const slug=s=>String(s).trim().toLowerCase().replace(/[^a-z0-9_-]/g,'_');
-const kh=location.hash.slice(1),kiosk=kh==='bilik'||kh==='bilikguru';
+const kh=location.hash.slice(1),kiosk=kh==='bilik'||kh==='bilikguru'||kh==='guru';
 let db,auth,me=null,role=null,ready=false,tab=kiosk?kh:(kh||'layar');
 let cfg={title:'Pemilihan Ketua & Wakil Ketua OSIS',school:'SMK Negeri 2 Sukorejo',logo:'',candidates:[],open:true};
 let tally={},stats={total:0,voted:0},sel=null,flash=null,voter=null,info=null;
@@ -325,19 +328,20 @@ function render(){
   const app=$('#app');
   if(!db){app.innerHTML='<main><div class="card"><b>Firebase belum dikonfigurasi.</b><p class="sub">Isi objek <code>FB</code> di bagian atas berkas ini. Ikuti langkah di PANDUAN.md.</p></div></main>';return}
   if(!ready){app.innerHTML='<main><p class="sub">Menghubungkan…</p></main>';return}
-  if(tab==='bilikguru'){if(!me)return guruConnect(app);if(gloaded!==me.uid){loadG();app.innerHTML='<main><p class="sub">Memeriksa status…</p></main>';return}return renderBilik(app)}
-  if(tab==='bilik'||tab==='admin'){
-    if(!me)return loginForm(app);
+  if(tab==='guru'){const st=me&&!me.isAnonymous&&(role==='admin'||role==='booth');return st?renderBilik(app):guruSelf(app)}
+  if(tab==='bilik'||tab==='bilikguru'||tab==='admin'){
+    if(!me||me.isAnonymous)return loginForm(app);
     if(role!=='admin'&&!(role==='booth'&&tab!=='admin'))return noAccess(app);
     return tab==='admin'?renderAdmin(app):renderBilik(app);
   }
   renderLive(app);
 }
+const loginErr=e=>({'auth/invalid-credential':'Email atau kata sandi salah.','auth/wrong-password':'Email atau kata sandi salah.','auth/user-not-found':'Email atau kata sandi salah.','auth/invalid-email':'Format email tidak valid.','auth/network-request-failed':'Tidak dapat terhubung ke server. Periksa koneksi internet.','auth/too-many-requests':'Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.','auth/user-disabled':'Akun ini dinonaktifkan.'}[e.code]||'Gagal masuk ('+(e.code||e.message)+').');
 function loginForm(app){
   app.innerHTML=`<main><div class="card" style="max-width:420px;margin:8vh auto"><h1>Masuk petugas</h1><p class="sub">${tab!=='admin'?'Login perangkat bilik (dilakukan sekali oleh panitia).':'Login panitia.'}</p>
   <input id="em" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Kata sandi" style="margin-top:8px"><div class="row" style="margin-top:12px"><button id="lg">Masuk</button></div>
   ${flash?`<div class="msg ${flash.t}">${esc(flash.m)}</div>`:''}</div></main>`;
-  $('#lg').onclick=async()=>{try{await auth.signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value);flash=null}catch(e){flash={t:'er',m:'Email atau kata sandi salah.'};render()}};
+  $('#lg').onclick=async()=>{try{await auth.signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value);flash=null}catch(e){flash={t:'er',m:loginErr(e)};render()}};
 }
 function noAccess(app){
   app.innerHTML=`<main><div class="card" style="max-width:480px;margin:8vh auto"><h1>Akses ditolak</h1><p class="sub">Akun ini belum terdaftar sebagai ${tab==='admin'?'panitia':'perangkat bilik atau panitia'}.</p><button id="out">Keluar</button></div></main>`;
@@ -370,41 +374,42 @@ setInterval(tick,1000);
 
 let tm;
 function lookup(){clearTimeout(tm);const id=slug($('#code').value);info=null;showWho();if(!id)return;
-  tm=setTimeout(async()=>{try{const[v,d]=await Promise.all([db.ref('voters/'+id).get(),db.ref('voted/'+id).get()]);if(slug($('#code').value)!==id)return;
-    info={id,found:v.exists(),n:(v.val()||{}).n,k:(v.val()||{}).k,done:d.exists()};showWho()}catch(e){}},300)}
+  tm=setTimeout(async()=>{try{const[v,d]=await Promise.all([db.ref((isG()?'guru/':'voters/')+id).get(),db.ref((isG()?'guruVoted/':'voted/')+id).get()]);if(slug($('#code').value)!==id)return;
+    info={id,found:v.exists(),n:(v.val()||{}).n,k:(v.val()||{}).k,done:d.exists()};showWho()}catch(e){info={id,found:false,done:false,err:true};showWho()}},300)}
 function showWho(){const w=$('#who');if(!w)return;if(!info){w.innerHTML='';return}
   const l=esc(info.n||info.id)+(info.k?' · Kelas '+esc(info.k):'');
-  w.innerHTML=!info.found?'<div class="msg er">NIS tidak ditemukan di daftar pemilih</div>':info.done?`<div class="msg er">⚠ ${l} sudah menggunakan hak pilihnya.</div>`:`<div class="msg ok">✓ ${l}</div>`}
+  w.innerHTML=info.err?'<div class="msg er">Tidak dapat memeriksa data. Periksa koneksi atau hubungi panitia.</div>':!info.found?'<div class="msg er">'+(isG()?'Kode guru tidak ditemukan':'NIS tidak ditemukan di daftar pemilih')+'</div>':info.done?`<div class="msg er">⚠ ${l} sudah menggunakan hak pilihnya.</div>`:`<div class="msg ok">✓ ${l}</div>`}
 
 const ORN='<div class="orn" aria-hidden="true"><i class="o1"></i><i class="o2"></i><i class="o3"></i><i class="dt d1"></i><i class="dt d2"></i><svg class="ln" viewBox="0 0 1440 900" preserveAspectRatio="none"><path d="M-20 180C220 90 420 250 700 170S1200 60 1460 150"/><path d="M-20 330C240 240 460 400 740 320S1220 210 1460 300"/><path d="M-20 690C260 600 520 780 820 700S1240 600 1460 680"/></svg><svg class="wv" viewBox="0 0 1440 220" preserveAspectRatio="none"><defs><linearGradient id="wg" x1="0" x2="1"><stop offset="0" stop-color="#ff7a2f"/><stop offset="1" stop-color="#ff3d5a"/></linearGradient></defs><path fill="url(#wg)" d="M0 120C240 40 480 200 760 120S1200 40 1440 110V220H0Z"/></svg></div>';
 const CONT='<svg class="cont" viewBox="0 0 400 800" preserveAspectRatio="none" aria-hidden="true"><path d="M-20 120C80 40 200 160 300 90S420 40 440 100"/><path d="M-30 260C90 180 180 320 320 230S430 200 450 260"/><path d="M-20 560C100 480 200 640 330 540S430 520 450 600"/><path d="M-30 700C80 640 220 760 340 680"/></svg>';
 const BOX='<svg viewBox="0 0 200 200" width="190" height="190" aria-hidden="true"><circle cx="100" cy="100" r="92" fill="#ffe1e1"/><rect x="40" y="62" width="120" height="86" rx="6" fill="#fff" stroke="#ff5a5f" stroke-width="3"/><rect x="34" y="52" width="132" height="14" rx="4" fill="#ff5a5f"/><rect x="62" y="56" width="76" height="5" rx="2.5" fill="#fff"/><g font-family="Inter,sans-serif" font-weight="800" font-size="13" fill="#ff5a5f"><g transform="rotate(-12 80 98)"><rect x="62" y="80" width="40" height="30" rx="3" fill="#fff" stroke="#ff9a9a"/><text x="68" y="100">Vote</text></g><g transform="rotate(10 124 104)"><rect x="106" y="86" width="40" height="30" rx="3" fill="#fff" stroke="#ff9a9a"/><text x="112" y="106">Vote</text></g></g></svg>';
 let vmOpen=null,scr='home',verr=null,doneInfo=null,doneTm;
-function goHome(){clearTimeout(doneTm);vmOpen=null;scr='home';sel=null;voter=null;info=null;verr=null;render()}
-function guruConnect(app){
-  if(!me&&!anonTry){anonTry=true;auth.signInAnonymously().catch(e=>{anonTry=false;gerr=(e.code==='auth/operation-not-allowed'||e.code==='auth/admin-restricted-operation')?'Login anonim belum diaktifkan di Firebase. Hubungi panitia.':'Gagal terhubung: '+e.message;render()})}
-  app.innerHTML=`<main><div class="card" style="max-width:480px;margin:8vh auto">${gerr?`<b>Tidak dapat terhubung</b><p class="sub">${esc(gerr)}</p>`:'<p class="sub">Menghubungkan…</p>'}</div></main>`;
-}
-async function loadG(){
-  if(!me||gloaded===me.uid)return;gloaded=me.uid;
-  try{gvoted=(await db.ref('guruVoted/'+me.uid).get()).exists()}catch(e){}
-  if(role!=='admin'){try{if(localStorage.getItem('osis_guru')===String(cfg.guruGen||0))gvoted=true}catch(e){}}
-  render();
+let anonTry=false,gerr=null;
+const isG=()=>tab==='bilikguru'||tab==='guru',selfG=()=>tab==='guru'&&!(role==='admin'||role==='booth');
+function goHome(){clearTimeout(doneTm);vmOpen=null;scr='home';sel=null;voter=null;info=null;verr=null;anonTry=false;gerr=null;if(selfG()&&me&&me.isAnonymous){auth.signOut();return}render()}
+function guruSelf(app){
+  const msg=(t,m,b)=>`<main><div class="card" style="max-width:480px;margin:8vh auto"><b>${t}</b><p class="sub">${m}</p>${b||''}</div></main>`;
+  if(cfg.guruSelf!==true){app.innerHTML=msg('Pemilihan guru mandiri belum dibuka','Silakan memilih di bilik guru atau hubungi panitia.');return}
+  if(!me){
+    if(!anonTry){anonTry=true;auth.signInAnonymously().catch(e=>{gerr=(e.code==='auth/operation-not-allowed'||e.code==='auth/admin-restricted-operation')?'Login anonim belum diaktifkan di Firebase. Hubungi panitia.':'Gagal terhubung ('+(e.code||e.message)+'). Periksa internet.';render()})}
+    app.innerHTML=gerr?msg('Tidak dapat terhubung',esc(gerr),'<button id="rt">Coba lagi</button>'):'<main><p class="sub">Menghubungkan…</p></main>';
+    const r=$('#rt');if(r)r.onclick=()=>{anonTry=false;gerr=null;render()};return}
+  renderBilik(app);
 }
 function renderBilik(app){scr==='home'?bHome(app):scr==='done'?bDone(app):bVote(app)}
 function bHome(app){
-  app.innerHTML=`<div class="home">${CONT}${FSB()}<div class="hm">${logo()}<h1>${esc(cfg.title)}</h1>${tab==='bilikguru'?'<span class="gchip">Bilik Suara Guru</span>':''}</div>
-  <div class="hb"><p class="tg">Gunakan hak pilihmu dengan mudah!</p>${tab==='bilikguru'&&gvoted?'<div class="closed">Anda sudah memilih di perangkat ini. Terima kasih!</div>':(cfg.open&&(tab!=='bilikguru'||cfg.guruOpen!==false))?'<button class="pill-w" id="go">Mulai memilih</button>':'<div class="closed">Pemilihan sedang ditutup</div>'}<div class="sch">${esc(cfg.school)}</div></div></div>`;
+  app.innerHTML=`<div class="home">${CONT}${FSB()}<div class="hm">${logo()}<h1>${esc(cfg.title)}</h1>${isG()?'<span class="gchip">'+(tab==='guru'?'Pemilihan Guru':'Bilik Suara Guru')+'</span>':''}</div>
+  <div class="hb"><p class="tg">Gunakan hak pilihmu dengan mudah!</p>${cfg.open?'<button class="pill-w" id="go">Mulai memilih</button>':'<div class="closed">Pemilihan sedang ditutup</div>'}<div class="sch">${esc(cfg.school)}</div></div></div>`;
   const g=$('#go');if(g)g.onclick=()=>{scr='vote';render()};
 }
 function bVote(app){
-  const G=tab==='bilikguru',cur=cfg.candidates.find(k=>k.no===sel),vk=cfg.candidates.find(k=>k.no===vmOpen);
+  const G=isG(),cur=cfg.candidates.find(k=>k.no===sel),vk=cfg.candidates.find(k=>k.no===vmOpen);
   const pc=cfg.candidates.map(k=>`<div class="pc ${sel===k.no?'sel':''}" data-no="${esc(k.no)}"><span class="no">${esc(k.no)}</span><span class="chk">✓</span>${photos(k)}<div class="pn">${esc(k.name)}</div>${(k.visi||k.misi)?`<button class="vm" type="button" data-vm="${esc(k.no)}">Lihat visi & misi</button>`:''}</div>`).join('');
   const li=t=>String(t).split('\n').map(x=>x.replace(/^\s*(\d+[.)]|[-•*])\s*/,'').trim()).filter(Boolean).map(x=>`<li>${esc(x)}</li>`).join('');
   const sheet=vk?`<div class="sbg" id="sbg"><div class="shs" role="dialog" aria-modal="true"><h3>Paslon ${esc(vk.no)}</h3><div class="sub">${esc(vk.name)}</div>${vk.visi?`<h4>Visi</h4><p>${esc(vk.visi)}</p>`:''}${vk.misi?`<h4>Misi</h4><ol>${li(vk.misi)}</ol>`:''}<div class="row" style="margin-top:18px"><button class="sec" id="vmx" style="flex:1">Tutup</button><button id="vmp" style="flex:1">Pilih paslon ${esc(vk.no)}</button></div></div></div>`:'';
   app.innerHTML=`<div class="vt">${FSB()}<div class="vh"><button class="back" id="bk" aria-label="Kembali">‹</button><div><b>${esc(cfg.title)}</b><small>${G?'Bilik Suara Guru':esc(cfg.school)}</small></div></div>
   ${verr?`<div class="msg er" id="fl">${esc(verr)}</div>`:''}
-  ${G?'':`<div class="sh">Masukkan NIS</div><input id="code" autocomplete="off" inputmode="numeric" placeholder="Contoh: 12345" value="${esc(voter||'')}"><div id="who"></div>`}
+  <div class="sh">${G?'Masukkan kode guru':'Masukkan NIS'}</div><input id="code" autocomplete="off" ${G?'autocapitalize="off" placeholder="Kode dari kartu"':'inputmode="numeric" placeholder="Contoh: 12345"'} value="${esc(voter||'')}"><div id="who"></div>
   <div class="sh">Pilih paslon</div><div class="grid">${pc||'<span class="sub">Belum ada paslon.</span>'}</div>
   <div class="dock"><span>${cur?'Pilihanmu: <b>Paslon '+esc(cur.no)+'</b>':'Belum memilih'}</span><button class="cta" id="send" ${sel?'':'disabled'}>Kirim suara</button></div></div>${sheet}`;
   const keep=()=>{const c=$('#code');if(c)voter=c.value};
@@ -418,18 +423,19 @@ function bVote(app){
 }
 function bDone(app){
   const c=Array.from({length:30},(_,i)=>`<i style="left:${(i*37+7)%100}%;animation-delay:${(i%10)*.15}s;background:${['#ff3d5a','#ff7a2f','#ffb199'][i%3]}"></i>`).join('');
-  app.innerHTML=`<div class="dn">${FSB()}<div class="conf">${c}</div><h1>Terima kasih!<br>Suaramu berhasil terkirim.</h1>${BOX}<p class="who">${doneInfo&&doneInfo.guru?'Suara guru tercatat':esc((doneInfo&&doneInfo.n)||'')+(doneInfo&&doneInfo.k?' · '+esc(doneInfo.k):'')}</p><button class="cta" id="hm">Kembali ke beranda</button>${doneInfo&&doneInfo.guru?'':'<small>Kembali otomatis dalam beberapa detik</small>'}</div>`;
+  app.innerHTML=`<div class="dn">${FSB()}<div class="conf">${c}</div><h1>Terima kasih!<br>Suaramu berhasil terkirim.</h1>${BOX}<p class="who">${doneInfo&&doneInfo.guru?esc(doneInfo.n||'')+' · Suara guru tercatat':esc((doneInfo&&doneInfo.n)||'')+(doneInfo&&doneInfo.k?' · '+esc(doneInfo.k):'')}</p><button class="cta" id="hm">Kembali ke beranda</button><small>Kembali otomatis dalam beberapa detik</small></div>`;
   $('#hm').onclick=goHome;
 }
 async function submitGuru(){
-  const app=$('#app');
-  if(gvoted){verr='Perangkat ini sudah digunakan untuk memilih.';return bVote(app)}
+  const app=$('#app'),c=$('#code'),id=slug(c?c.value:'');voter=c?c.value:'';
+  if(!info||info.id!==id||!info.found){verr='Kode guru tidak terdaftar. Periksa kembali.';return bVote(app)}
+  if(info.done){verr='Kode ini sudah digunakan untuk memilih.';return bVote(app)}
   if(!sel){verr='Pilih salah satu paslon.';return bVote(app)}
   const bt=$('#send');if(bt)bt.disabled=true;
-  const S=firebase.database.ServerValue,up={};up['guruVoted/'+me.uid]=S.TIMESTAMP;up['tally/'+slug(sel)]=S.increment(1);up['stats/guru']=S.increment(1);
-  try{await db.ref().update(up);gvoted=true;try{localStorage.setItem('osis_guru',String(cfg.guruGen||0))}catch(e){}
-    doneInfo={guru:true};sel=null;verr=null;scr='done';render()}
-  catch(e){verr=e.code==='PERMISSION_DENIED'?'Suara ditolak: perangkat ini sudah memilih, kuota guru terpenuhi, atau pemilihan ditutup.':'Gagal mengirim: '+e.message;bVote(app)}
+  const S=firebase.database.ServerValue,up={};up['guruVoted/'+id]=S.TIMESTAMP;up['tally/'+slug(sel)]=S.increment(1);up['stats/guru']=S.increment(1);
+  if(selfG())up['guruUid/'+me.uid]=id;
+  try{await db.ref().update(up);doneInfo={n:info.n,guru:true};sel=null;voter=null;info=null;verr=null;scr='done';render();doneTm=setTimeout(goHome,9000)}
+  catch(e){verr=e.code==='PERMISSION_DENIED'?'Suara ditolak: kode sudah dipakai, pemilihan ditutup, atau akses tidak sah.':'Gagal mengirim: '+e.message;bVote(app)}
 }
 async function submit(){
   const id=slug($('#code').value);voter=$('#code').value;const app=$('#app');
@@ -439,7 +445,6 @@ async function submit(){
   try{await db.ref().update(up);doneInfo={n:info.n,k:info.k};sel=null;voter=null;info=null;verr=null;scr='done';render();doneTm=setTimeout(goHome,9000)}
   catch(e){verr=e.code==='PERMISSION_DENIED'?'Suara ditolak: NIS sudah dipakai atau akses tidak sah.':'Gagal mengirim: '+e.message;bVote(app)}
 }
-let gvoted=false,gloaded=null,anonTry=false,gerr=null;
 let rk={v:null,d:null,busy:false,err:false},rsub='ring',rf={tk:'',jr:'',kl:'',st:'belum',q:'',sq:''};
 const pct=(a,b)=>b?Math.round(a/b*1000)/10:0;
 const tmf=t=>new Date(t).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}).replace('.',':');
@@ -539,6 +544,49 @@ function rekapBind(app){
     const up={['voters/'+id]:{n,k}},isNew=!rk.v[id];if(isNew)up['stats/total']=firebase.database.ServerValue.increment(1);
     try{await db.ref().update(up);rk.v[id]={n,k};rf.sq=n;flash={t:'ok',m:isNew?'Siswa ditambahkan.':'Data siswa diperbarui.'}}catch(x){flash={t:'er',m:'Gagal: '+x.message}}renderAdmin(app)});
 }
+let gk={g:null,v:null,busy:false,err:false},gf={q:'',st:'all'};
+const GA='abcdefghjkmnpqrstuvwxyz23456789';
+const gen=ex=>{let c;do{c='';for(let i=0;i<6;i++)c+=GA[Math.floor(Math.random()*GA.length)]}while(ex[c]);return c};
+async function gLoad(){
+  if(gk.busy)return;gk.busy=true;gk.err=false;
+  try{const[a,b]=await Promise.all([db.ref('guru').get(),db.ref('guruVoted').get()]);gk.g=a.val()||{};gk.v=b.val()||{}}
+  catch(e){gk.err=true;flash={t:'er',m:'Gagal memuat data guru: '+(e.message||e.code)}}
+  gk.busy=false;if(tab==='admin'&&atab==='guru'&&!typing())renderAdmin($('#app'));
+}
+setInterval(()=>{if(tab==='admin'&&role==='admin'&&atab==='guru'&&!typing())gLoad()},30000);
+const gRows=()=>{const q=gf.q.toLowerCase();return Object.entries(gk.g).map(([c,x])=>({c,n:x.n||'',v:gk.v[c]})).filter(r=>(gf.st==='all'||(gf.st==='belum'?!r.v:!!r.v))&&(!q||r.n.toLowerCase().includes(q)||r.c.includes(q))).sort((a,b)=>a.n.localeCompare(b.n))};
+const grow=r=>`<div class="sr"><div class="grow"><b>${esc(r.n)}</b><small>Kode: <code>${esc(r.c.toUpperCase())}</code></small></div><span class="chip ${r.v?'y':'n'}">${r.v?'✓ '+tmf(r.v):'Belum'}</span><button class="sec sm" data-gnew="${r.c}" ${r.v?'disabled':''}>Kode baru</button><button class="dan sm" data-gdel="${r.c}" ${r.v?'disabled':''}>Hapus</button></div>`;
+const glist=()=>{const r=gRows();return `<p class="sub" style="margin:8px 0">${r.length} guru</p>`+r.slice(0,300).map(grow).join('')};
+function guruBody(){
+  const base=location.href.split('#')[0];
+  if(!gk.g)return `<div class="card">${gk.err?'Data gagal dimuat. ':'Memuat data guru…'} <button class="sec sm" id="grf">Muat ulang</button></div>`;
+  const n=Object.keys(gk.g).length,v=Object.keys(gk.v).filter(c=>gk.g[c]).length,t=(l,x)=>`<div class="at"><b>${x}</b><span>${l}</span></div>`,on=cfg.guruSelf===true;
+  return `<div class="atl">${t('Guru terdaftar',n)}${t('Sudah memilih',v)}${t('Belum memilih',n-v)}${t('Partisipasi',n?pct(v,n)+'%':'–')}</div>
+  <div class="card"><h2>Jalur pemilihan</h2><p class="sub" style="margin:0 0 10px"><b>Lewat petugas:</b> guru datang ke bilik guru (<code>#bilikguru</code>, HP bilik yang sudah login), mengetik kode, lalu memilih. Selalu tersedia.<br><b>Memilih sendiri:</b> guru membuka tautan di HP sendiri dan memakai kode yang sama. Saat ini: <b style="color:${on?'var(--ok)':'var(--bad)'}">${on?'DIBUKA':'DITUTUP'}</b></p>
+  <button id="gself" class="${on?'sec':''}">${on?'Tutup pemilihan mandiri':'Buka pemilihan mandiri'}</button>
+  <label class="fl">Tautan pemilihan mandiri (bagikan ke guru)</label><div class="lk"><input readonly value="${esc(base+'#guru')}"><button class="sec sm" data-copy="${esc(base+'#guru')}">Salin</button></div>
+  <p class="sub" style="margin:8px 0 0;font-size:.85rem">Jalur mandiri butuh <b>Anonymous</b> aktif di Firebase (Authentication → Sign-in method).</p></div>
+  <div class="card"><h2>Tambah guru</h2><textarea id="gnm" rows="4" placeholder="Satu nama per baris, misalnya:&#10;Bu Sari, S.Pd.&#10;Pak Budi"></textarea><div class="row" style="margin-top:10px"><button id="gadd">Tambah dan buat kode</button></div></div>
+  <div class="card"><h2>Daftar guru dan kode</h2><div class="row" style="margin:6px 0"><select id="gst">${[['all','Semua'],['belum','Belum memilih'],['sudah','Sudah memilih']].map(([k,l])=>`<option value="${k}" ${gf.st===k?'selected':''}>${l}</option>`).join('')}</select><button class="sec sm" id="grf">Muat ulang</button></div>
+  <input id="gq" placeholder="Cari nama atau kode…" value="${esc(gf.q)}"><div id="glist">${glist()}</div>
+  <div class="row" style="margin-top:12px"><button class="sec" id="gcsv">Unduh kode (CSV)</button><button class="sec" id="gcsv2">Guru belum memilih (CSV)</button><button id="gpr">Cetak kartu kode</button></div></div>
+  <div class="gcards">${Object.entries(gk.g).sort((a,b)=>(a[1].n||'').localeCompare(b[1].n||'')).map(([c,x])=>`<div class="gc"><small>${esc(cfg.title)}</small><b>${esc(x.n)}</b><span>Kode: <strong>${esc(c.toUpperCase())}</strong></span><small>Pilih di: ${esc(base+'#guru')}</small></div>`).join('')}</div>`;
+}
+function guruBind(app){
+  const on=(i,f)=>{const e=$(i);if(e)e.onclick=f};
+  const upd=async(up,m)=>{try{await db.ref().update(up);Object.entries(up).forEach(([k,v])=>{if(k.startsWith('guru/')){const c=k.slice(5);if(v)gk.g[c]=v;else delete gk.g[c]}});await db.ref('config/guruTotal').set(Object.keys(gk.g).length);flash={t:'ok',m}}catch(e){flash={t:'er',m:'Gagal: '+(e.message||e.code)}}renderAdmin(app)};
+  on('#grf',()=>{gk.err=false;gLoad()});
+  on('#gself',async()=>{const nx=cfg.guruSelf!==true;try{await db.ref('config/guruSelf').set(nx);flash={t:'ok',m:nx?'Pemilihan mandiri dibuka.':'Pemilihan mandiri ditutup.'}}catch(e){flash={t:'er',m:'Gagal: '+e.message}}renderAdmin(app)});
+  on('#gadd',()=>{const names=$('#gnm').value.split('\n').map(x=>x.trim()).filter(Boolean);if(!names.length){flash={t:'er',m:'Isi minimal satu nama.'};return renderAdmin(app)}
+    const ex={...gk.g},up={};names.forEach(n=>{const c=gen(ex);ex[c]=1;up['guru/'+c]={n}});upd(up,names.length+' guru ditambahkan dan kodenya dibuat.')});
+  app.querySelectorAll('[data-gnew]').forEach(b=>b.onclick=()=>{const o=b.dataset.gnew,x=gk.g[o];if(!confirm('Buat kode baru untuk '+x.n+'? Kode lama tidak berlaku.'))return;const c=gen(gk.g);upd({['guru/'+o]:null,['guru/'+c]:{n:x.n}},'Kode baru dibuat untuk '+x.n+'.')});
+  app.querySelectorAll('[data-gdel]').forEach(b=>b.onclick=()=>{const o=b.dataset.gdel;if(!confirm('Hapus '+gk.g[o].n+' dari daftar guru?'))return;upd({['guru/'+o]:null},'Guru dihapus.')});
+  const st=$('#gst');if(st)st.onchange=()=>{gf.st=st.value;renderAdmin(app)};
+  const q=$('#gq');if(q)q.oninput=()=>{gf.q=q.value;$('#glist').innerHTML=glist();guruBind(app)};
+  on('#gcsv',()=>dl('kode-guru.csv',[['Nama','Kode']].concat(Object.entries(gk.g).map(([c,x])=>[x.n,c.toUpperCase()]).sort((a,b)=>a[0].localeCompare(b[0])))));
+  on('#gcsv2',()=>dl('guru-belum-memilih.csv',[['Nama']].concat(Object.entries(gk.g).filter(([c])=>!gk.v[c]).map(([c,x])=>[x.n]))));
+  on('#gpr',()=>{document.body.classList.add('pg');window.print();setTimeout(()=>document.body.classList.remove('pg'),800)});
+}
 let bi={},bform={n:'',e:'',p:''},biOn=false;
 async function makeBooth(name,email,pw){
   const ap=firebase.apps.find(a=>a.name==='sec')||firebase.initializeApp(FB,'sec'),a2=ap.auth();let uid;
@@ -553,14 +601,15 @@ async function makeBooth(name,email,pw){
 }
 let atab='umum';
 function renderAdmin(app){
+  if(atab==='guru'&&!gk.g&&!gk.busy&&!gk.err)gLoad();
   if((atab==='rekap'||atab==='siswa')&&!rk.v&&!rk.busy&&!rk.err)rkLoad();
   const C=cfg.candidates,tot=stats.total||0,v=stats.voted||0,base=location.href.split('#')[0];
   const tile=(l,x)=>`<div class="at"><b>${x}</b><span>${l}</span></div>`;
-  const tabs=[['umum','Umum'],['paslon','Paslon'],['siswa','Data siswa'],['rekap','Rekap'],['akun','Akun bilik'],['kontrol','Kontrol']].map(([k,l])=>`<button class="ab ${atab===k?'on':''}" data-at="${k}">${l}</button>`).join('');
+  const tabs=[['umum','Umum'],['paslon','Paslon'],['siswa','Data siswa'],['guru','Guru'],['rekap','Rekap'],['akun','Akun bilik'],['kontrol','Kontrol']].map(([k,l])=>`<button class="ab ${atab===k?'on':''}" data-at="${k}">${l}</button>`).join('');
   const photo=(f,i,l)=>`<label class="up"><input type="file" accept="image/*" data-up="${f}" data-i="${i}" hidden>${C[i][f]?`<img src="${esc(C[i][f])}" alt="">`:'<span class="pl">+</span>'}<small>Foto ${l} · ${C[i][f]?'ganti':'unggah'}</small></label>`;
   const link=(l,u)=>`<label class="fl">${l}</label><div class="lk"><input readonly value="${esc(u)}"><button class="sec sm" data-copy="${esc(u)}">Salin</button></div>`;
   let body='';
-  if(atab==='umum')body=`<div class="card"><h2>Identitas pemilihan</h2><label class="fl">Judul pemilihan</label><input id="ttl" value="${esc(cfg.title)}"><label class="fl">Nama sekolah</label><input id="sch" value="${esc(cfg.school)}"><label class="fl">Kuota suara guru (opsional, isi jumlah guru)</label><input id="gt" inputmode="numeric" value="${cfg.guruTotal||''}" placeholder="Contoh: 40"><label class="fl">Logo sekolah</label><div class="row">${logo()}<label class="btn">Ganti logo<input type="file" id="lg" accept="image/*" hidden></label></div></div>`;
+  if(atab==='umum')body=`<div class="card"><h2>Identitas pemilihan</h2><label class="fl">Judul pemilihan</label><input id="ttl" value="${esc(cfg.title)}"><label class="fl">Nama sekolah</label><input id="sch" value="${esc(cfg.school)}"><label class="fl">Logo sekolah</label><div class="row">${logo()}<label class="btn">Ganti logo<input type="file" id="lg" accept="image/*" hidden></label></div></div>`;
   if(atab==='paslon')body=C.map((k,i)=>`<div class="card"><div class="ph2"><span class="no2">${esc(k.no)}</span><b>Paslon ${esc(k.no)}</b><button class="sec sm" data-del="${i}">Hapus</button></div>
     <div class="g2"><div><label class="fl">No. urut</label><input data-f="no" data-i="${i}" value="${esc(k.no)}" inputmode="numeric"></div><div><label class="fl">Nama ketua &amp; wakil</label><input data-f="name" data-i="${i}" value="${esc(k.name)}"></div></div>
     <label class="fl">Foto</label><div class="ups">${photo('photoK',i,'ketua')}${photo('photoW',i,'wakil')}</div>
@@ -571,9 +620,9 @@ function renderAdmin(app){
     <textarea id="vt" rows="8" placeholder="NIS,Nama,Kelas&#10;12345,Andi Pratama,XI RPL 1" style="margin-top:10px"></textarea>
     <div class="row" style="margin-top:10px"><button id="imp">Simpan data siswa</button><span class="sub">Tersimpan: ${tot} siswa</span></div></div>`;
   if(atab==='kontrol')body=`<div class="card"><h2>Status pemilihan</h2><p class="sub" style="margin:0 0 10px">Saat ini: <b style="color:${cfg.open?'var(--ok)':'var(--bad)'}">${cfg.open?'DIBUKA':'DITUTUP'}</b></p><button id="tog" class="${cfg.open?'sec':''}">${cfg.open?'Tutup pemilihan':'Buka pemilihan'}</button></div>
-    <div class="card"><h2>Pemilihan guru</h2><p class="sub" style="margin:0 0 10px">Guru memilih dari HP masing-masing lewat tautan di bawah. Satu perangkat satu suara. Saat ini: <b style="color:${cfg.guruOpen!==false?'var(--ok)':'var(--bad)'}">${cfg.guruOpen!==false?'DIBUKA':'DITUTUP'}</b></p><button id="togg" class="${cfg.guruOpen!==false?'sec':''}">${cfg.guruOpen!==false?'Tutup pemilihan guru':'Buka pemilihan guru'}</button></div>
-    <div class="card"><h2>Tautan</h2>${link('Layar hitung (projector)',base)}${link('Bilik suara siswa (HP bilik)',base+'#bilik')}${link('Pemilihan guru (bagikan ke grup guru)',base+'#bilikguru')}</div>
+    <div class="card"><h2>Tautan</h2>${link('Layar hitung (projector)',base)}${link('Bilik suara siswa (HP bilik)',base+'#bilik')}${link('Bilik suara guru (HP bilik)',base+'#bilikguru')}${link('Pemilihan guru mandiri (bagikan ke guru)',base+'#guru')}</div>
     <div class="card dz"><h2>Zona berbahaya</h2><p class="sub" style="margin:0 0 10px">Menghapus semua suara dan status memilih. Lakukan setelah uji coba, sebelum hari pemilihan.</p><button class="dan" id="rst">Reset semua suara</button></div>`;
+  if(atab==='guru')body=guruBody();
   if(atab==='rekap')body=rekapBody();
   if(atab==='akun')body=`<div class="card"><h2>Buat akun bilik</h2><p class="sub" style="margin:0 0 4px">Akun ini dipakai untuk login di HP bilik siswa dan bilik guru. Email boleh berupa alamat karangan, misalnya <code>bilik1@osis.sch</code>.</p>
     <label class="fl">Nama bilik</label><input id="bn" value="${esc(bform.n)}" placeholder="Contoh: Bilik 1">
@@ -593,7 +642,7 @@ function renderAdmin(app){
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{read();flash=null;atab=b.dataset.at;renderAdmin(app)});
   app.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{try{navigator.clipboard.writeText(b.dataset.copy);b.textContent='Tersalin ✓'}catch(e){}});
   on('#out',()=>auth.signOut());
-  rekapBind(app);
+  rekapBind(app);guruBind(app);
   on('#bg',()=>{const c='abcdefghjkmnpqrstuvwxyz23456789';let p='';for(let i=0;i<10;i++)p+=c[Math.floor(Math.random()*c.length)];$('#bp').value=p;read()});
   on('#bc',()=>{read();const{n,e,p}=bform;if(!n.trim()||!e.trim()||p.length<6){flash={t:'er',m:'Isi nama, email, dan kata sandi (minimal 6 karakter).'};return renderAdmin(app)}
     run(async()=>{await makeBooth(n.trim(),e.trim(),p);bform={n:'',e:'',p:''}},'Akun bilik dibuat. Catat email dan kata sandinya.')});
@@ -603,17 +652,16 @@ function renderAdmin(app){
   app.querySelectorAll('[data-up]').forEach(e=>e.onchange=async()=>{const f=e.files[0];if(!f)return;read();cfg.candidates[e.dataset.i][e.dataset.up]=await shrink(f,520,'image/jpeg');saveCfg('Foto diunggah.')});
   const lg=$('#lg');if(lg)lg.onchange=async e=>{const f=e.target.files[0];if(!f)return;read();cfg.logo=await shrink(f,256,'image/png');saveCfg('Logo diunggah.')};
   on('#save',()=>{read();saveCfg('Perubahan tersimpan.')});
-  on('#togg',()=>{cfg.guruOpen=(cfg.guruOpen===false);saveCfg(cfg.guruOpen===false?'Pemilihan guru ditutup.':'Pemilihan guru dibuka.')});
   on('#tog',()=>{cfg.open=!cfg.open;saveCfg(cfg.open?'Pemilihan dibuka.':'Pemilihan ditutup.')});
   const csv=$('#csv');if(csv)csv.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#vt').value=String(r.result).replace(/^\uFEFF/,'')};r.readAsText(f)};
   on('#imp',()=>{const o={};let dup=0,bad=0;String($('#vt').value).replace(/\r/g,'').split('\n').forEach((l,i)=>{if(!l.trim())return;const p=l.split(/[,;\t]/);if(i===0&&/nis/i.test(p[0]))return;const id=slug(p[0]);if(!id||!(p[1]||'').trim()){bad++;return}if(o[id])dup++;o[id]={n:p[1].trim(),k:(p[2]||'').trim()}});
     const n=Object.keys(o).length;if(!n){flash={t:'er',m:'Tidak ada data yang bisa dibaca.'};return renderAdmin(app)}
     if(!confirm('Daftar siswa akan DIGANTI dengan '+n+' siswa dari data ini. Lanjutkan?'))return;
     run(async()=>{await db.ref().update({voters:o,'stats/total':n});rk.v=null;rk.err=false},n+' siswa tersimpan'+(dup?', '+dup+' NIS ganda (data terakhir dipakai)':'')+(bad?', '+bad+' baris dilewati (NIS atau nama kosong)':'')+'.')});
-  on('#rst',()=>{if(!confirm('Hapus SEMUA suara dan status memilih?'))return;run(()=>db.ref().update({tally:null,voted:null,guruVoted:null,'stats/voted':0,'stats/guru':0,'config/guruGen':Date.now()}),'Semua suara direset.')});
+  on('#rst',()=>{if(!confirm('Hapus SEMUA suara dan status memilih?'))return;run(async()=>{await db.ref().update({tally:null,voted:null,guruVoted:null,guruUid:null,'stats/voted':0,'stats/guru':0});rk.v=null;rk.err=false;gk.g=null;gk.err=false},'Semua suara direset.')});
 }
 
-if(!FB.apiKey.startsWith('ISI')){
+if(typeof firebase==='undefined'){$('#app').innerHTML='<main><div class="card"><b>Tidak dapat terhubung ke layanan Firebase.</b><p class="sub">Periksa koneksi internet, lalu muat ulang halaman.</p></div></main>'}else if(!FB.apiKey.startsWith('ISI')){
   firebase.initializeApp(FB);db=firebase.database();auth=firebase.auth();
   db.ref('config').on('value',s=>{const d=s.val()||{};cfg={...cfg,...d,logo:d.logo||'',candidates:d.candidates?Object.values(d.candidates):[],open:d.open!==false};if(!typing())render()});
   db.ref('tally').on('value',s=>{tally=s.val()||{};if(tab==='layar')render()});
